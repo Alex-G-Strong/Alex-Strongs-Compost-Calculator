@@ -15,6 +15,8 @@ No install, no server, no internet connection required — works identically whe
 
 Everything is saved locally in your browser (via `localStorage` and `IndexedDB`) — nothing is uploaded anywhere.
 
+Opens in dark mode by default — click the 🌙/☀️ toggle in the top right to switch, and it remembers your choice.
+
 ### Deployment
 
 This repo (`Alex-Strongs-Compost-Calculator`) is the source of truth. The live copy at `alexstrong.design/tools/compost/` is a manually-synced copy of [`alexs-compost-calculator_v2.html`](alexs-compost-calculator_v2.html) at `static/tools/compost/index.html` in the `Alex-G-Strong.github.io` (Hugo) repo. After making changes here, re-push the file there to update the live site.
@@ -30,6 +32,8 @@ This is the home tab. It lists every recipe you've saved, showing the date, tota
 - **Import** — load a `.json` file exported from this app (yours or someone else's). Useful for moving recipes between devices — see the FAQ tab for AirDrop/Nearby Share instructions.
 - **🔗 Share** — generates a link and a scannable QR code that encode just that recipe's ingredients and settings (not your saved results, notes, or photos). Anyone who opens the link or scans the code — even on a device that's never used this app before — gets that recipe loaded straight into their own calculator, ready to solve and save. Nothing is uploaded anywhere; the entire recipe is encoded directly in the URL itself.
 - **✕** — delete a recipe.
+
+A status line under the header shows whether an automatic backup file is linked (see [Automatic File Backup](#automatic-file-backup-chrome-edge-opera) below) — or, on non-Chromium browsers, a note that automatic backup isn't available there.
 
 Click **+ Start a New Recipe** to clear the workbench and begin.
 
@@ -104,9 +108,17 @@ A structured bug report form, mirroring [GitHub's recommended issue-form format]
 
 Everything lives entirely in your browser, tied to that specific browser + device:
 - Saved recipes → browser `IndexedDB`.
-- Custom ingredient library and dark mode preference → browser `localStorage`.
+- Custom ingredient library, dark mode preference, and linked backup file → browser `localStorage`/`IndexedDB`.
 
 Nothing is sent to a server. This data **will not appear** if you open the calculator in a different browser, a different device/user account, an incognito/private window, or after clearing that browser's site data — it isn't synced anywhere by default. Use **Export All** (Recipe Book tab) periodically to back up your recipes and to move them to another browser/device via **Import**.
+
+### Automatic File Backup (Chrome, Edge, Opera)
+
+On Chromium-based browsers, the first time you save a recipe you'll be prompted to pick (or create) a `.json` backup file on disk. From then on, every save/update/delete/note/import silently rewrites that file with your full, current recipe book — no more manual Export clicks. The Recipe Book tab shows the linked filename and lets you unlink or reconnect it at any time.
+
+This relies on the [File System Access API](https://developer.chrome.com/docs/capabilities/web-apis/file-system-access), which **Firefox has explicitly declined to implement** (citing security concerns) and **Safari has never supported**. On those browsers the calculator falls back to the manual Export/Import flow above, and a one-time notice explains that automatic backup needs a Chromium-based browser. Because of this, **the calculator is designed to work best in Chrome, Edge, or Opera** — it's fully usable elsewhere, just without the automatic file sync.
+
+Note this isn't a "save on close" mechanism — browsers don't reliably let a page finish an async file write while it's being closed, so instead the app writes the backup file continuously, immediately after every change, so it's always current.
 
 ## Reporting Bugs
 
@@ -126,4 +138,3 @@ The root is kept to just what the live app needs. Everything else — source dat
 | [`dev/gen_feedstock.py`](dev/gen_feedstock.py) | Script that converts the CSV into the JS array above (converts density to canonical kg/m³, dedupes by name). |
 | [`dev/compostcalc_full_database.png`](dev/compostcalc_full_database.png) | Reference image of the full feedstock database. |
 | [`dev/READ_ME_compost-optimizer.md`](dev/READ_ME_compost-optimizer.md) | Developer-facing architecture notes. |
-| [`dev/index.html`](dev/index.html) | Leftover redirect from when this repo briefly had its own GitHub Pages site (now disabled — the live app is served from `alexstrong.design` instead, see Deployment above). Kept in case a standalone Pages site is useful again later. |
