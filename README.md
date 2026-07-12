@@ -89,6 +89,9 @@ In-app reference covering:
 - What the Structural Index means and why the average must stay above 5.0.
 - The math behind the solver (see below).
 
+### 6. 🐛 Report Bugs
+A structured bug report form, mirroring [GitHub's recommended issue-form format](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms) (Title, Version, Steps to Reproduce, Error Logs). Filling it out and clicking **Submit** opens a pre-filled GitHub issue in a new tab — nothing is sent anywhere automatically, and no data leaves your browser until you actually click "Submit new issue" on GitHub's page (which requires a free GitHub account). This tab notes that the project may not be actively maintained.
+
 ## How the Solver Works
 
 - **Canonical metric backend** — internally, all math runs in cubic meters, kg/m³, and kilograms, regardless of what unit you have selected. Every other unit (cubic yards, feet, lb/yd³, wheelbarrows, buckets, US tons) is converted to/from those canonical values only at the display/input boundary. This keeps the core formulas simple and makes the two unit systems fully interoperable — solving the same physical batch in imperial or metric produces the same underlying result.
@@ -104,11 +107,16 @@ Everything lives entirely in your browser, tied to that specific browser + devic
 
 Nothing is sent to a server. This data **will not appear** if you open the calculator in a different browser, a different device/user account, an incognito/private window, or after clearing that browser's site data — it isn't synced anywhere by default. Use **Export All** (Recipe Book tab) periodically to back up your recipes and to move them to another browser/device via **Import**.
 
+## Reporting Bugs
+
+Use the in-app **🐛 Report Bugs** tab, or [open an issue directly on GitHub](https://github.com/Alex-G-Strong/Alex-Strongs-Compost-Calculator/issues/new/choose) — both use the same structured template at [`.github/ISSUE_TEMPLATE/bug_report.yml`](.github/ISSUE_TEMPLATE/bug_report.yml).
+
 ## Repo Contents
 
 | File | Purpose |
 |---|---|
 | [`alexs-compost-calculator_v2.html`](alexs-compost-calculator_v2.html) | The app itself — open this in a browser. |
+| [`.github/ISSUE_TEMPLATE/bug_report.yml`](.github/ISSUE_TEMPLATE/bug_report.yml) | GitHub's structured issue-form template; also mirrored by the in-app Report Bugs tab. |
 | [`categorized_compost_database.csv`](categorized_compost_database.csv) | Source data for the 134-item Reference Database in the in-app Ingredient Library (name, category, C:N, bulk density, moisture). |
 | [`feedstock_array.js.txt`](feedstock_array.js.txt) | Generated JS array built from the CSV via `gen_feedstock.py` — mirrors exactly what's embedded as `csvLibrary` in the HTML file. If you edit the CSV, rerun the script and paste the output back into the HTML. |
 | [`gen_feedstock.py`](gen_feedstock.py) | Script that converts the CSV into the JS array above (converts density to canonical kg/m³, dedupes by name). |

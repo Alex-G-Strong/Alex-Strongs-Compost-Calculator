@@ -1,0 +1,32 @@
+name: Bug Report
+description: File a structured bug report to help improve the tool
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the form below.
+  - type: input
+    id: version
+    attributes:
+      label: Version/Commit Hash
+      description: What version of the tool are you running?
+      placeholder: e.g., v1.0.4 or main branch commit hash
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Clear steps to recreate the issue.
+      placeholder: |
+        1. Open Scaffold
+        2. Upload transcript file...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Terminal Output or Error Logs
+      description: Paste any stack traces or logs here.
+      render: bash
