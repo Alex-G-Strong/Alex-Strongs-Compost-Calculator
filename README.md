@@ -2,16 +2,22 @@
 
 A single-page, offline-capable web app for designing multi-ingredient compost recipes. You tell it what feedstocks you have on hand and how much of each, rank what matters most (moisture, density, or C:N ratio), and it builds a phased "Operations Sheet" telling you exactly how much of each ingredient to load onto the pad.
 
-No install, no server, no internet connection required — just open the HTML file in a browser.
+**Live:** [alexstrong.design/tools/compost/](https://alexstrong.design/tools/compost/)
+
+No install, no server, no internet connection required — works identically whether you open it from that link or just open the HTML file directly in a browser.
 
 ## Quick Start
 
-1. Open [`alexs-compost-calculator_v2.html`](alexs-compost-calculator_v2.html) in any modern browser (Chrome, Edge, Safari, Firefox).
+1. Open the [live app](https://alexstrong.design/tools/compost/) or [`alexs-compost-calculator_v2.html`](alexs-compost-calculator_v2.html) directly in any modern browser (Chrome, Edge, Safari, Firefox).
 2. Click **+ Start a New Recipe**.
 3. Walk through the four tabs in order: **Constraints → Ingredients → Operations Sheet**.
 4. Save the result to your Recipe Book so you can reload, print, or annotate it later.
 
 Everything is saved locally in your browser (via `localStorage` and `IndexedDB`) — nothing is uploaded anywhere.
+
+### Deployment
+
+This repo (`Alex-Strongs-Compost-Calculator`) is the source of truth. The live copy at `alexstrong.design/tools/compost/` is a manually-synced copy of [`alexs-compost-calculator_v2.html`](alexs-compost-calculator_v2.html) at `static/tools/compost/index.html` in the `Alex-G-Strong.github.io` (Hugo) repo. After making changes here, re-push the file there to update the live site.
 
 ## Walkthrough
 
@@ -22,6 +28,7 @@ This is the home tab. It lists every recipe you've saved, showing the date, tota
 - **Export** — download a single recipe as a `.json` file.
 - **Export All** — back up your entire recipe book as one `.json` file.
 - **Import** — load a `.json` file exported from this app (yours or someone else's). Useful for moving recipes between devices — see the FAQ tab for AirDrop/Nearby Share instructions.
+- **🔗 Share** — generates a link and a scannable QR code that encode just that recipe's ingredients and settings (not your saved results, notes, or photos). Anyone who opens the link or scans the code — even on a device that's never used this app before — gets that recipe loaded straight into their own calculator, ready to solve and save. Nothing is uploaded anywhere; the entire recipe is encoded directly in the URL itself.
 - **✕** — delete a recipe.
 
 Click **+ Start a New Recipe** to clear the workbench and begin.
