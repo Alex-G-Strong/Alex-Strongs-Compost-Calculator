@@ -29,10 +29,11 @@ Click **+ Start a New Recipe** to clear the workbench and begin.
 ### 2. Constraints — Site & Batch Settings
 Set up the batch before adding ingredients:
 
-- **Measurement Unit** — the physical unit you'll actually use on the pad: Cubic Yards, a custom loader bucket size, Wheelbarrow (~6 cu ft), or 5-Gallon Bucket. All ingredient quantities and results will be shown in this unit.
+- **Measurement Unit** — the physical unit you'll actually use on the pad: Cubic Yards, Cubic Meters, a custom loader bucket size, Wheelbarrow (~6 cu ft), or 5-Gallon Bucket. All ingredient quantities and results will be shown in this unit.
+  - Selecting **Cubic Meters** switches the whole batch-sizing workflow to metric: the Target Batch Volume field and the Pile Dimensions fields (Length/Width/Height) switch from cuyd/ft to m³/meters, and the calculated/solved volumes are reported back in m³. Any other unit choice keeps dimensions in feet and volumes in cubic yards. (Ingredient chemistry values — C:N, density, moisture, structural index — stay in their original units regardless of the measurement unit chosen.)
 - **Define Batch Size By** — either:
-  - **Direct Volume**: enter a target volume in cubic yards, or
-  - **Pile Dimensions**: enter Length × Base Width × Height (ft), and the tool calculates volume using a parabolic pile profile (`Base × Height × 0.67 × Length`). If your height exceeds 5/8 of the base width, it warns you the pile risks over-compaction and will need a high structural index.
+  - **Direct Volume**: enter a target volume (cubic yards, or cubic meters if that unit is selected), or
+  - **Pile Dimensions**: enter Length × Base Width × Height (in feet, or meters if Cubic Meters is selected), and the tool calculates volume using a parabolic pile profile (`Base × Height × 0.67 × Length`). If your height exceeds 5/8 of the base width, it warns you the pile risks over-compaction and will need a high structural index.
 
 **Optimization Priorities & Ranges** — drag the three cards (using the `≡` handle) into the order that matters most to you:
 - **Moisture (%)** — target 55–65%. Too dry slows decomposition; too wet goes anaerobic and smells.

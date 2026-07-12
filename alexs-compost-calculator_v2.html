@@ -173,6 +173,7 @@
         <label style="flex: 1; min-width: 200px;">Measurement Unit: <span class="info-icon" title="The physical unit you will use to measure and load ingredients on the pad.">ⓘ</span>
             <select id="unitSelect" onchange="toggleVolumeUI()" style="margin-top: 5px;">
                 <option value="cuyd" selected>Cubic Yards (cuyd)</option>
+                <option value="cubicmeters">Cubic Meters (m³)</option>
                 <option value="loader">Custom Loader Bucket</option>
                 <option value="wheelbarrow">Wheelbarrow (~6 cu ft)</option>
                 <option value="5gal">5-Gallon Bucket</option>
@@ -190,26 +191,26 @@
     </div>
 
     <div id="directVolContainer" style="margin-top: 15px;">
-        <label>Target Batch Volume (cuyd): <span class="info-icon" title="The total amount of compost you want to build in this single pile.">ⓘ</span>
+        <label><span id="targetVolLabel">Target Batch Volume (cuyd):</span> <span class="info-icon" title="The total amount of compost you want to build in this single pile.">ⓘ</span>
             <input type="number" id="targetBatchVol" value="20.0" min="0.1" step="0.1" style="margin-top: 5px;">
         </label>
     </div>
 
     <div id="dimensionsContainer" style="display: none; background: var(--light-bg); padding: 15px; border-radius: 5px; margin-top: 15px;">
-        <p style="margin-top: 0; font-size: 0.9em; color: var(--muted);">Calculates cubic yards using a parabolic profile (Base × Height × 0.67 × Length).</p>
+        <p id="dimFormulaNote" style="margin-top: 0; font-size: 0.9em; color: var(--muted);">Calculates cubic yards using a parabolic profile (Base × Height × 0.67 × Length).</p>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <label style="flex: 1; min-width: 100px;">Length (ft): <input type="number" id="dimL" value="20" oninput="updateCalculatedVol()"></label>
-            <label style="flex: 1; min-width: 100px;">Base Width (ft): <input type="number" id="dimW" value="10" oninput="updateCalculatedVol()"></label>
-            <label style="flex: 1; min-width: 100px;">Height (ft): <input type="number" id="dimH" value="5" oninput="updateCalculatedVol()"></label>
+            <label style="flex: 1; min-width: 100px;"><span id="dimLLabel">Length (ft):</span> <input type="number" id="dimL" value="20" oninput="updateCalculatedVol()"></label>
+            <label style="flex: 1; min-width: 100px;"><span id="dimWLabel">Base Width (ft):</span> <input type="number" id="dimW" value="10" oninput="updateCalculatedVol()"></label>
+            <label style="flex: 1; min-width: 100px;"><span id="dimHLabel">Height (ft):</span> <input type="number" id="dimH" value="5" oninput="updateCalculatedVol()"></label>
         </div>
         <p id="heightWarning" style="display: none; color: var(--danger); background: rgba(220,53,69,0.1); padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 10px;"></p>
-        <p style="margin-bottom: 0;"><strong>Calculated Target Volume:</strong> <span id="calculatedVolDisplay">24.81</span> cuyd</p>
+        <p style="margin-bottom: 0;"><strong>Calculated Target Volume:</strong> <span id="calculatedVolDisplay">24.81</span> <span id="calculatedVolUnit">cuyd</span></p>
     </div>
     
     <hr style="margin: 30px 0; border-color: var(--border);">
     
     <h2 style="text-align: center;">Optimization Priorities & Ranges</h2>
-    <p class="header-note">Drag the handle (≡) to reorder. The solver strictly obeys the top priority.</p>
+    <p class="header-note">The calculator will prioritize these factors in the order listed. The top item will be strictly enforced. Drag the handle (≡) to reorder.</p>
     
     <ul id="priorityList">
         <li class="draggable-item" draggable="true" data-id="moisture">
@@ -255,7 +256,7 @@
             <thead>
                 <tr>
                     <th>Ingredient Name</th>
-                    <th>C:N <span class="info-icon" title="Carbon to Nitrogen Ratio">ⓘ</span></th>
+                    <th>C:N <span class="info-icon" title="Carbon percentage divided by Nitrogen percentage">ⓘ</span></th>
                     <th>Density <span class="info-icon" title="Bulk weight in lbs per cubic yard">ⓘ</span><br><small>(lb/yd³)</small></th>
                     <th>Moist. <span class="info-icon" title="Percentage of total mass that is water">ⓘ</span><br><small>(%)</small></th>
                     <th>Struct. <span class="info-icon" title="Resistance to compaction. 10 = rigid (woodchips), 1 = mushy (food waste).">ⓘ</span><br><small>(1-10)</small></th>
@@ -380,7 +381,8 @@
 
     const UNIT_CONVERSIONS = {
         "cuyd": { name: "Cubic Yards", toCuyd: 1.0 },
-        "loader": { name: "Buckets", toCuyd: 1.0 }, 
+        "cubicmeters": { name: "Cubic Meters", toCuyd: 1.30795 },
+        "loader": { name: "Buckets", toCuyd: 1.0 },
         "wheelbarrow": { name: "Wheelbarrows", toCuyd: 0.2222 },
         "5gal": { name: "5-Gal Buckets", toCuyd: 0.02476 }
     };
@@ -595,8 +597,9 @@
     function toggleVolumeUI() {
         const unit = document.getElementById('unitSelect').value;
         const mode = document.getElementById('batchModeSelect').value;
+        const isMetric = (unit === 'cubicmeters');
         document.getElementById('loaderVolContainer').style.display = (unit === 'loader') ? 'block' : 'none';
-        
+
         if (mode === 'direct') {
             document.getElementById('directVolContainer').style.display = 'block';
             document.getElementById('dimensionsContainer').style.display = 'none';
@@ -607,22 +610,38 @@
         }
         const unitName = UNIT_CONVERSIONS[unit].name;
         document.getElementById('availHeader').innerHTML = `Avail. Inventory <span class="info-icon" title="Max limits.">ⓘ</span><br><small>(${unitName})</small>`;
+
+        document.getElementById('targetVolLabel').innerText = isMetric ? 'Target Batch Volume (m³):' : 'Target Batch Volume (cuyd):';
+        document.getElementById('dimLLabel').innerText = isMetric ? 'Length (m):' : 'Length (ft):';
+        document.getElementById('dimWLabel').innerText = isMetric ? 'Base Width (m):' : 'Base Width (ft):';
+        document.getElementById('dimHLabel').innerText = isMetric ? 'Height (m):' : 'Height (ft):';
+        document.getElementById('dimFormulaNote').innerText = isMetric
+            ? 'Calculates cubic meters using a parabolic profile (Base × Height × 0.67 × Length).'
+            : 'Calculates cubic yards using a parabolic profile (Base × Height × 0.67 × Length).';
     }
 
     function updateCalculatedVol() {
         const l = parseFloat(document.getElementById('dimL').value) || 0, w = parseFloat(document.getElementById('dimW').value) || 0, h = parseFloat(document.getElementById('dimH').value) || 0;
         const hWarn = document.getElementById('heightWarning');
         // Changed to 5/8ths compaction ratio
-        if (h > (w * 5 / 8) && w > 0) { hWarn.style.display = 'block'; hWarn.innerText = "⚠️ Height is more than 5/8ths width - pile risks over compaction. A high structural index is required."; } 
+        if (h > (w * 5 / 8) && w > 0) { hWarn.style.display = 'block'; hWarn.innerText = "⚠️ Height is more than 5/8ths width - pile risks over compaction. A high structural index is required."; }
         else hWarn.style.display = 'none';
-        document.getElementById('calculatedVolDisplay').innerText = ((w * h * 0.67 * l) / 27).toFixed(2);
+        const isMetric = document.getElementById('unitSelect').value === 'cubicmeters';
+        const rawVol = w * h * 0.67 * l; // cubic ft (imperial inputs) or cubic meters (metric inputs)
+        const displayVol = isMetric ? rawVol : (rawVol / 27);
+        document.getElementById('calculatedVolDisplay').innerText = displayVol.toFixed(2);
+        document.getElementById('calculatedVolUnit').innerText = isMetric ? 'm³' : 'cuyd';
     }
 
     function getTargetVolumeCuyd() {
-        if (document.getElementById('batchModeSelect').value === 'direct') return parseFloat(document.getElementById('targetBatchVol').value) || 1.0;
-        else {
+        const isMetric = document.getElementById('unitSelect').value === 'cubicmeters';
+        if (document.getElementById('batchModeSelect').value === 'direct') {
+            const val = parseFloat(document.getElementById('targetBatchVol').value) || 1.0;
+            return isMetric ? val * UNIT_CONVERSIONS.cubicmeters.toCuyd : val;
+        } else {
             const l = parseFloat(document.getElementById('dimL').value) || 0, w = parseFloat(document.getElementById('dimW').value) || 0, h = parseFloat(document.getElementById('dimH').value) || 0;
-            return (w * h * 0.67 * l) / 27;
+            const rawVol = w * h * 0.67 * l;
+            return isMetric ? rawVol * UNIT_CONVERSIONS.cubicmeters.toCuyd : rawVol / 27;
         }
     }
     function getUnitMultiplier() {
@@ -840,7 +859,12 @@
 
         grid.innerHTML = allR.map(r => {
             const res = r.results || { gVol: 0, phases: [], gMoisture: 0, gDensity: 0, gCN: 0 };
-            
+            const savedUnit = (r.workbench && r.workbench.constraints && r.workbench.constraints.unit) || 'cuyd';
+            const savedBucketVol = r.workbench && r.workbench.constraints ? r.workbench.constraints.customBucketVol : null;
+            const savedUnitInfo = UNIT_CONVERSIONS[savedUnit] || UNIT_CONVERSIONS.cuyd;
+            const savedMultiplier = savedUnit === 'loader' ? (parseFloat(savedBucketVol) || 1.0) : savedUnitInfo.toCuyd;
+            const savedVolDisplay = res.gVol ? (res.gVol / savedMultiplier).toFixed(1) : '?';
+
             let inspectHtml = `
                 <details>
                     <summary>Inspect Results</summary>
@@ -860,7 +884,7 @@
             return `
                 <div class="recipe-card">
                     <h3>${r.title}</h3>
-                    <div class="recipe-meta">📅 ${r.date} &bull; 🏗️ ${res.gVol ? res.gVol.toFixed(1) : '?'} cuyd</div>
+                    <div class="recipe-meta">📅 ${r.date} &bull; 🏗️ ${savedVolDisplay} ${savedUnitInfo.name}</div>
                     ${notesHtml}
                     ${inspectHtml}
                     <div class="recipe-actions">
@@ -1054,7 +1078,7 @@
 
             let haltHtml = '';
             if (haltReason || (targetVolCuyd - gVol) > 0.1) {
-                haltHtml = `<div style="background: rgba(220,53,69,0.1); color: var(--danger); padding: 15px; border: 1px solid var(--danger); border-radius: 5px; margin-bottom: 20px;"><strong>⚠️ Pile Halted at ${gVol.toFixed(1)} cuyd </strong> (Target was ${targetVolCuyd.toFixed(1)}).<br><em>Reason: ${haltReason || "Insufficient inventory limits."}</em></div>`;
+                haltHtml = `<div style="background: rgba(220,53,69,0.1); color: var(--danger); padding: 15px; border: 1px solid var(--danger); border-radius: 5px; margin-bottom: 20px;"><strong>⚠️ Pile Halted at ${(gVol / multiplier).toFixed(1)} ${unitName} </strong> (Target was ${(targetVolCuyd / multiplier).toFixed(1)} ${unitName}).<br><em>Reason: ${haltReason || "Insufficient inventory limits."}</em></div>`;
             } else {
                 haltHtml = `<div style="background: rgba(40,167,69,0.1); color: var(--success); padding: 15px; border: 1px solid var(--success); border-radius: 5px; margin-bottom: 20px; text-align: center;"><strong>✅ Target Volume Reached Successfully!</strong></div>`;
             }
@@ -1073,7 +1097,7 @@
                     <h4 style="text-align: center;">Phase ${p.phaseNum}</h4>
                     <div style="background: var(--card-bg); border-radius: 5px; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); text-align: center;">
                         <span style="font-size: 0.8rem; color: var(--muted); display: block; margin-bottom: 2px;">Target Volume Added</span>
-                        <strong style="font-size: 1.2rem; display: block; color: var(--primary);">${p.volumeCuyd.toFixed(1)} cuyd <small style="color: var(--muted);">(${p.targetPct.toFixed(0)}%)</small></strong>
+                        <strong style="font-size: 1.2rem; display: block; color: var(--primary);">${(p.volumeCuyd / multiplier).toFixed(1)} ${unitName} <small style="color: var(--muted);">(${p.targetPct.toFixed(0)}%)</small></strong>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 15px; text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
                         <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 8px 4px;"><span style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom: 2px;">Moisture</span><strong style="font-size:1rem;">${p.metrics.m.toFixed(1)}%</strong></div>
@@ -1105,7 +1129,7 @@
                     <div style="flex: 1; min-width: 250px;">
                         <h3 style="text-align: center;">Total Pile Yield</h3>
                         <div class="results-panel">
-                            <p style="margin: 0 0 10px 0; font-size: 1.2rem;"><strong>${gVol.toFixed(2)} cuyd</strong> built</p>
+                            <p style="margin: 0 0 10px 0; font-size: 1.2rem;"><strong>${(gVol / multiplier).toFixed(2)} ${unitName}</strong> built</p>
                             <p style="margin: 0; color: var(--muted);">${(gWeight / 2000).toFixed(2)} Tons</p>
                         </div>
                     </div>
