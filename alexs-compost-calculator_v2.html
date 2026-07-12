@@ -132,18 +132,28 @@
 <datalist id="ingredient-library"></datalist>
 
 <div id="libraryModal" class="modal-overlay">
-    <div class="modal-content">
-        <h2>Manage Saved Ingredients</h2>
+    <div class="modal-content" style="max-width: 950px;">
+        <h2 style="margin-bottom: 5px;">Ingredient Library</h2>
+        <p style="background: var(--light-bg); border: 1px solid var(--border); border-radius: 5px; padding: 8px 12px; font-size: 0.85rem; color: var(--muted); margin: 0 0 12px 0;">
+            💾 Your saved items are stored on this device, in this browser only.
+        </p>
+        <input type="text" id="libSearchInput" placeholder="🔍 Search ingredients by name..." oninput="filterIngredientLibrary(this.value)" style="width: 100%; padding: 10px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--input-text);">
+
+        <h3 style="margin-bottom: 5px;">Your Items</h3>
         <div class="table-container">
             <table>
                 <thead>
                     <tr>
-                        <th>Name</th><th>C:N</th><th id="libDensityHeader">Density (lb/yd³)</th><th>Moist.</th><th>SI</th><th>Actions</th>
+                        <th>Name</th><th>C:N</th><th id="libDensityHeader">Density (lb/yd³)</th><th>Moist.</th><th>SI</th><th>Inventory</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="customLibraryList"></tbody>
             </table>
         </div>
+
+        <h3 style="margin-top: 20px; margin-bottom: 5px;">Reference Database <span style="font-weight: normal; color: var(--muted); font-size: 0.85rem;">(136-feedstock dataset — click Load to add to your recipe)</span></h3>
+        <div id="libCsvSections"></div>
+
         <button class="btn-next" style="margin-top: 15px;" onclick="closeLibraryModal()">Close</button>
     </div>
 </div>
@@ -161,7 +171,10 @@
     <p class="header-note" style="text-align: left; margin-top: 10px;">
         Load past recipes to your workbench, export them to share via AirDrop/Nearby Share, or add field notes with photos. <a href="#" onclick="showTab('tab5')" style="color: var(--primary);">See FAQ for more details.</a>
     </p>
-    
+    <p style="background: var(--light-bg); border: 1px solid var(--border); border-radius: 5px; padding: 8px 12px; font-size: 0.85rem; color: var(--muted); margin-top: -5px;">
+        💾 Recipes are saved on this device, in this browser only. Use <strong>Export All</strong> before switching browsers, computers, or clearing browser data.
+    </p>
+
     <div id="recipeGrid" class="recipe-grid"></div>
     <button class="btn-solve" style="margin-top: 30px;" onclick="startNewRecipe()">+ Start a New Recipe</button>
 </div>
@@ -245,7 +258,7 @@
 <div id="tab3" class="tab-content">
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2>Ingredient Manager</h2>
-        <button class="btn-secondary" onclick="openLibraryModal()">Manage Saved Items</button>
+        <button class="btn-secondary" onclick="openLibraryModal()">📚 Ingredient Library</button>
     </div>
     <p class="header-note" style="text-align: left;">
         Type to search library or use the drop down menu to input available inventory. For a custom item, add the facts from lab testing or a google search with some guess-timation. The calculator builds the pile in stages based on these limits.
@@ -296,6 +309,21 @@
     </details>
 
     <details class="faq-accordion" onclick="closeOtherAccordions(this)">
+        <summary>🔎 Troubleshooting: Why can't I see my prior recipes or ingredients?</summary>
+        <div>
+            <p><strong>Q: I saved recipes/ingredients before, but they're gone now — what happened?</strong><br>
+            A: This app saves everything directly in your browser (recipes in IndexedDB, custom ingredients in localStorage) — nothing is uploaded to a server. That storage is tied to <em>this specific browser, on this specific device</em>. Your data will appear to be "missing" if you:</p>
+            <ul style="margin: 0 0 10px 0; padding-left: 20px;">
+                <li>Open the calculator in a <strong>different browser</strong> (e.g. saved in Chrome, now opening in Edge/Firefox/Safari)</li>
+                <li>Open it on a <strong>different device</strong> or under a different Windows/Mac user account</li>
+                <li>Use a <strong>private/incognito window</strong> (this storage is wiped when the window closes)</li>
+                <li>Recently <strong>cleared your browser's site data / browsing history</strong></li>
+            </ul>
+            <p style="margin-bottom: 0;">Always open the calculator from the same browser to keep your data. To move data between browsers or devices, use <strong>Export All</strong> in the Recipe Book and <strong>Import</strong> it on the other side — see the sync FAQ above.</p>
+        </div>
+    </details>
+
+    <details class="faq-accordion" onclick="closeOtherAccordions(this)">
         <summary>🏗️ What is the Structural Index?</summary>
         <div>
             <p>The Structural Index (1-10) is a proxy for how well an ingredient resists compaction. Heavy, wet ingredients (food waste = 1) will compact and go anaerobic if the pile is built too high. Rigid carbon bulking agents (wood chips = 10) hold the pile open. The calculator ensures your overall pile maintains an average Structural Score above 5.0 to maintain Free Air Space (FAS).</p>
@@ -340,12 +368,21 @@
     let latestSimulationData = null;
     let densityUnitIsMetric = false; // tracks whether density fields are currently displayed in kg/m3
 
-    // Density is stored canonically as lb/yd3 everywhere (library, saved recipes).
-    // These helpers convert to/from the kg/m3 display shown when Cubic Meters is the active unit.
-    const KG_M3_PER_LB_YD3 = 0.593276;
+    // --- Canonical Unit System ---
+    // The solver's internal math always works in metric (m3 for volume, kg/m3 for density,
+    // kg for weight). Every other unit (cuyd, ft, lb/yd3, wheelbarrows, buckets...) is a
+    // display/input convenience that gets converted to/from these canonical values at the
+    // UI boundary. This keeps the core formulas unit-agnostic and simple.
+    const KG_M3_PER_LB_YD3 = 0.593276; // multiply lb/yd3 by this to get kg/m3
+    const M3_PER_CUYD = 0.764555;      // multiply yd3 by this to get m3
+    const M3_PER_FT3 = 0.0283168;      // multiply ft3 by this to get m3
+    const KG_PER_LB = 0.453592;
+
     function isMetricUnit() { return document.getElementById('unitSelect').value === 'cubicmeters'; }
-    function densityToDisplay(canonicalLbYd3, isMetric) { return isMetric ? canonicalLbYd3 * KG_M3_PER_LB_YD3 : canonicalLbYd3; }
-    function densityToCanonical(displayVal, isMetric) { return isMetric ? displayVal / KG_M3_PER_LB_YD3 : displayVal; }
+    // Density is stored canonically as kg/m3 everywhere (library, saved recipes, solver math).
+    // These helpers convert to/from the lb/yd3 display shown when a non-metric unit is active.
+    function densityToDisplay(canonicalKgM3, isMetric) { return isMetric ? canonicalKgM3 : canonicalKgM3 / KG_M3_PER_LB_YD3; }
+    function densityToCanonical(displayVal, isMetric) { return isMetric ? displayVal : displayVal * KG_M3_PER_LB_YD3; }
 
     // IndexedDB wrapper for Recipes
     const dbPromise = new Promise((resolve, reject) => {
@@ -388,36 +425,191 @@
     }
 
     const UNIT_CONVERSIONS = {
-        "cuyd": { name: "Cubic Yards", toCuyd: 1.0 },
-        "cubicmeters": { name: "Cubic Meters", toCuyd: 1.30795 },
-        "loader": { name: "Buckets", toCuyd: 1.0 },
-        "wheelbarrow": { name: "Wheelbarrows", toCuyd: 0.2222 },
-        "5gal": { name: "5-Gal Buckets", toCuyd: 0.02476 }
+        "cuyd": { name: "Cubic Yards", toM3: M3_PER_CUYD },
+        "cubicmeters": { name: "Cubic Meters", toM3: 1.0 },
+        "loader": { name: "Buckets", toM3: M3_PER_CUYD }, // bucket size is entered in cuyd; converted below
+        "wheelbarrow": { name: "Wheelbarrows", toM3: 6 * M3_PER_FT3 },
+        "5gal": { name: "5-Gal Buckets", toM3: 5 * 0.00378541 }
     };
 
+    // Density values below are canonical kg/m3 (converted from the original lb/yd3 figures).
     const internalLibrary = [
-        { name: "Horse Manure", cn: 25, density: 800, moisture: 70, si: 4 },
-        { name: "Wood Chips", cn: 400, density: 400, moisture: 20, si: 10 },
-        { name: "Grass Clippings", cn: 15, density: 600, moisture: 80, si: 1 },
-        { name: "Cow Manure", cn: 18, density: 1400, moisture: 80, si: 3 },
-        { name: "Poultry Manure", cn: 10, density: 1200, moisture: 70, si: 2 },
-        { name: "Vegetable Scraps", cn: 15, density: 800, moisture: 85, si: 1 },
-        { name: "Coffee Grounds", cn: 20, density: 800, moisture: 60, si: 2 },
-        { name: "Leaves (Dry)", cn: 60, density: 200, moisture: 15, si: 6 },
-        { name: "Straw", cn: 80, density: 100, moisture: 10, si: 9 },
-        { name: "Cardboard/Paper", cn: 350, density: 150, moisture: 5, si: 7 },
-        { name: "Sawdust", cn: 500, density: 350, moisture: 15, si: 8 },
-        { name: "Food Waste (Mixed)", cn: 15, density: 1000, moisture: 75, si: 1 }
+        { name: "Horse Manure", cn: 25, density: 474.6, moisture: 70, si: 4 },
+        { name: "Wood Chips", cn: 400, density: 237.3, moisture: 20, si: 10 },
+        { name: "Grass Clippings", cn: 15, density: 356.0, moisture: 80, si: 1 },
+        { name: "Cow Manure", cn: 18, density: 830.6, moisture: 80, si: 3 },
+        { name: "Poultry Manure", cn: 10, density: 711.9, moisture: 70, si: 2 },
+        { name: "Vegetable Scraps", cn: 15, density: 474.6, moisture: 85, si: 1 },
+        { name: "Coffee Grounds", cn: 20, density: 474.6, moisture: 60, si: 2 },
+        { name: "Leaves (Dry)", cn: 60, density: 118.7, moisture: 15, si: 6 },
+        { name: "Straw", cn: 80, density: 59.3, moisture: 10, si: 9 },
+        { name: "Cardboard/Paper", cn: 350, density: 89.0, moisture: 5, si: 7 },
+        { name: "Sawdust", cn: 500, density: 207.6, moisture: 15, si: 8 },
+        { name: "Food Waste (Mixed)", cn: 15, density: 593.3, moisture: 75, si: 1 }
     ];
 
-    window.onload = async () => { 
+    // 134-item reference dataset generated from categorized_compost_database.csv (see gen_csv_library.py).
+    // Density values are canonical kg/m3. Categorized for the Ingredient Library modal; NOT merged into
+    // fullLibrary/the Ingredients-tab autocomplete, which stays scoped to internalLibrary + custom items.
+    const csvLibrary = [
+        { name: "Apple filter cake", category: "Crop Residues & Processing Wastes", cn: 16, density: 710.2, moisture: 60, si: 4 },
+        { name: "Apple pomace", category: "Crop Residues & Processing Wastes", cn: 48, density: 908.3, moisture: 88, si: 4 },
+        { name: "Apple processing sludge", category: "Crop Residues & Processing Wastes", cn: 7, density: 837.1, moisture: 59, si: 4 },
+        { name: "Brome Hay UNL", category: "Straw, Hay & Silage", cn: 24, density: 97.3, moisture: 7, si: 7 },
+        { name: "Cocoa Shells", category: "Crop Residues & Processing Wastes", cn: 22, density: 452.1, moisture: 8, si: 4 },
+        { name: "Coffee grounds 2", category: "Crop Residues & Processing Wastes", cn: 18, density: 896.4, moisture: 80, si: 4 },
+        { name: "Corn cobs", category: "Crop Residues & Processing Wastes", cn: 94, density: 318.6, moisture: 15, si: 4 },
+        { name: "Corn stalks 1", category: "Crop Residues & Processing Wastes", cn: 67, density: 20.2, moisture: 12, si: 4 },
+        { name: "Corn Stalks UNL", category: "Crop Residues & Processing Wastes", cn: 29, density: 90.2, moisture: 8, si: 4 },
+        { name: "Cranberry filter cake", category: "Crop Residues & Processing Wastes", cn: 31, density: 605.7, moisture: 55, si: 4 },
+        { name: "Cranberry filter cake (with rice hulls)", category: "Crop Residues & Processing Wastes", cn: 42, density: 768.9, moisture: 71, si: 4 },
+        { name: "Cull Potatoes", category: "Crop Residues & Processing Wastes", cn: 18, density: 910.1, moisture: 78, si: 4 },
+        { name: "Fruit waste WSU", category: "Crop Residues & Processing Wastes", cn: 32, density: 831.8, moisture: 80, si: 4 },
+        { name: "Old Silage UNL", category: "Straw, Hay & Silage", cn: 19, density: 297.8, moisture: 32, si: 7 },
+        { name: "Rice hulls 1", category: "Crop Residues & Processing Wastes", cn: 121, density: 119.8, moisture: 14, si: 4 },
+        { name: "Rice hulls 2", category: "Crop Residues & Processing Wastes", cn: 91, density: 119.8, moisture: 10, si: 4 },
+        { name: "Spent silage", category: "Straw, Hay & Silage", cn: 30, density: 249.8, moisture: 68, si: 7 },
+        { name: "Shredded Broom Corn Stalks with Dry Leaves (SRJC)", category: "Yard Trimmings & Vegetation", cn: 30, density: 108.6, moisture: 58, si: 5 },
+        { name: "Grape Pomace (SRJC)", category: "Crop Residues & Processing Wastes", cn: 15, density: 659.7, moisture: 56, si: 4 },
+        { name: "Vegetable produce", category: "Crop Residues & Processing Wastes", cn: 19, density: 892.9, moisture: 87, si: 4 },
+        { name: "Vegetable Waste", category: "Crop Residues & Processing Wastes", cn: 11, density: 949.8, moisture: 87, si: 4 },
+        { name: "Blood", category: "Meat, Fish & Animal By-Products", cn: 3, density: 900, moisture: 30, si: 2 },
+        { name: "Crab and lobster wastes", category: "Meat, Fish & Animal By-Products", cn: 5, density: 325.1, moisture: 47, si: 2 },
+        { name: "Digester Fiber MSU COTC 2022", category: "Crop Residues & Processing Wastes", cn: 40, density: 596.8, moisture: 83, si: 4 },
+        { name: "Feather Meal UNL", category: "Meat, Fish & Animal By-Products", cn: 4, density: 719.6, moisture: 8, si: 2 },
+        { name: "Feather meal and distillers grain mix UNL", category: "Meat, Fish & Animal By-Products", cn: 7, density: 627.7, moisture: 9, si: 2 },
+        { name: "Paunch manure", category: "Manures & Animal Waste", cn: 25, density: 866.2, moisture: 83, si: 3 },
+        { name: "Poultry Mortalities", category: "Manures & Animal Waste", cn: 5, density: 503.1, moisture: 65, si: 3 },
+        { name: "Laying hens manure", category: "Manures & Animal Waste", cn: 7, density: 835.9, moisture: 49, si: 3 },
+        { name: "Mixed livestock manure, well bedded", category: "Manures & Animal Waste", cn: 31, density: 260.4, moisture: 32, si: 3 },
+        { name: "Pig Farm Slurry", category: "Manures & Animal Waste", cn: 14, density: 881.6, moisture: 90, si: 3 },
+        { name: "Poultry", category: "Manures & Animal Waste", cn: 10, density: 690, moisture: 53, si: 3 },
+        { name: "Poultry Manure", category: "Manures & Animal Waste", cn: 9, density: 861.4, moisture: 20, si: 3 },
+        { name: "Poultry manure broiler WSU 2007", category: "Manures & Animal Waste", cn: 12, density: 496, moisture: 49, si: 3 },
+        { name: "Poultry manure broiler WSU 2008", category: "Manures & Animal Waste", cn: 13, density: 370.8, moisture: 70, si: 3 },
+        { name: "Poultry manure broiler WSU 2009", category: "Manures & Animal Waste", cn: 12, density: 461.6, moisture: 42, si: 3 },
+        { name: "Poultry manure broiler WSU 2010", category: "Manures & Animal Waste", cn: 12, density: 407.6, moisture: 38, si: 3 },
+        { name: "Poultry manure broiler WSU COTC", category: "Manures & Animal Waste", cn: 12, density: 433.7, moisture: 36, si: 3 },
+        { name: "Poultry Manure with Litter CU COTC", category: "Manures & Animal Waste", cn: 9, density: 352.4, moisture: 16, si: 3 },
+        { name: "Sheep", category: "Manures & Animal Waste", cn: 14, density: 1040, moisture: 69, si: 3 },
+        { name: "Cattle manure 4 (SRJC)", category: "Manures & Animal Waste", cn: 18, density: 1120.1, moisture: 68, si: 3 },
+        { name: "Chicken manure (SRJC)", category: "Manures & Animal Waste", cn: 6, density: 875.1, moisture: 13, si: 3 },
+        { name: "Duck Manure (SRJC)", category: "Manures & Animal Waste", cn: 19, density: 480, moisture: 52, si: 3 },
+        { name: "Stable", category: "Manures & Animal Waste", cn: 13, density: 795, moisture: 58, si: 3 },
+        { name: "Straw Wheat", category: "Straw, Hay & Silage", cn: 85, density: 199.9, moisture: 28, si: 7 },
+        { name: "Swine", category: "Manures & Animal Waste", cn: 13, density: 841.3, moisture: 80, si: 3 },
+        { name: "Turkey litter", category: "Manures & Animal Waste", cn: 16, density: 465.7, moisture: 26, si: 3 },
+        { name: "Vet Hospital Manure and Bedding", category: "Manures & Animal Waste", cn: 59, density: 210, moisture: 53, si: 3 },
+        { name: "Beef penpack manure MSU COTC 2022", category: "Manures & Animal Waste", cn: 12, density: 512.6, moisture: 30, si: 3 },
+        { name: "Broiler litter", category: "Manures & Animal Waste", cn: 14, density: 512.6, moisture: 37, si: 3 },
+        { name: "Cattle 1", category: "Manures & Animal Waste", cn: 19, density: 866.2, moisture: 81, si: 3 },
+        { name: "Cattle 2", category: "Manures & Animal Waste", cn: 17, density: 866.2, moisture: 81, si: 3 },
+        { name: "Dairy cow", category: "Manures & Animal Waste", cn: 13, density: 795, moisture: 80, si: 3 },
+        { name: "Dairy manure and rice hulls", category: "Manures & Animal Waste", cn: 43, density: 458, moisture: 73, si: 3 },
+        { name: "Dairy Manure (no bedding)", category: "Manures & Animal Waste", cn: 18, density: 1299.9, moisture: 84, si: 3 },
+        { name: "Dairy manure solids", category: "Manures & Animal Waste", cn: 58, density: 428.9, moisture: 73, si: 3 },
+        { name: "Dairy manure with bedding", category: "Manures & Animal Waste", cn: 19, density: 790.2, moisture: 67, si: 3 },
+        { name: "Dairy solids WSU 2007", category: "Manures & Animal Waste", cn: 33, density: 846, moisture: 81, si: 3 },
+        { name: "Dairy solids WSU 2008", category: "Manures & Animal Waste", cn: 29, density: 762.4, moisture: 83, si: 3 },
+        { name: "Dairy solids WSU 2009", category: "Manures & Animal Waste", cn: 57, density: 709.6, moisture: 81, si: 3 },
+        { name: "Urine", category: "Liquids & Additives", cn: 1, density: 1021.6, moisture: 95, si: 1 },
+        { name: "Water", category: "Liquids & Additives", cn: 0, density: 997.9, moisture: 100, si: 1 },
+        { name: "Straw 1", category: "Straw, Hay & Silage", cn: 35, density: 127.6, moisture: 12, si: 7 },
+        { name: "Straw 2", category: "Straw, Hay & Silage", cn: 80, density: 127.6, moisture: 7, si: 7 },
+        { name: "Straw Oat", category: "Straw, Hay & Silage", cn: 60, density: 199.9, moisture: 18, si: 7 },
+        { name: "Straw, Stable Bedding", category: "Straw, Hay & Silage", cn: 127, density: 199.9, moisture: 18, si: 7 },
+        { name: "Dairy solids WSU 2010", category: "Manures & Animal Waste", cn: 47, density: 641.3, moisture: 83, si: 3 },
+        { name: "Dairy solids WSU COTC", category: "Manures & Animal Waste", cn: 42, density: 728.5, moisture: 87, si: 3 },
+        { name: "Dry Manure UNL", category: "Manures & Animal Waste", cn: 13, density: 669.8, moisture: 17, si: 3 },
+        { name: "Feedlot Pen UNL", category: "Manures & Animal Waste", cn: 21, density: 659.7, moisture: 28, si: 3 },
+        { name: "Heifer manure, moderate bedding", category: "Manures & Animal Waste", cn: 28, density: 542.3, moisture: 72, si: 3 },
+        { name: "Horse (general manure)", category: "Manures & Animal Waste", cn: 30, density: 729.1, moisture: 72, si: 3 },
+        { name: "Horse Bedding", category: "Manures & Animal Waste", cn: 35, density: 220.1, moisture: 32, si: 3 },
+        { name: "Horse bedding UNL", category: "Manures & Animal Waste", cn: 25, density: 113.9, moisture: 14, si: 3 },
+        { name: "Horse manure CPP COTC", category: "Manures & Animal Waste", cn: 22, density: 380.3, moisture: 56, si: 3 },
+        { name: "Horse manure SUNY-C COTC", category: "Manures & Animal Waste", cn: 30, density: 148.3, moisture: 34, si: 3 },
+        { name: "Horse Manure and bedding CU COTC", category: "Manures & Animal Waste", cn: 1, density: 640.1, moisture: 56, si: 3 },
+        { name: "Horse manure and bedding UCD COTC", category: "Manures & Animal Waste", cn: 34, density: 189.8, moisture: 68, si: 3 },
+        { name: "Bakery Waste", category: "Food & Municipal Waste", cn: 28, density: 249.8, moisture: 10, si: 1 },
+        { name: "Fair waste WSU 2007", category: "Food & Municipal Waste", cn: 60, density: 170.3, moisture: 55, si: 1 },
+        { name: "Fair waste WSU 2008", category: "Food & Municipal Waste", cn: 126, density: 185.7, moisture: 50, si: 1 },
+        { name: "Fair waste WSU 2009", category: "Food & Municipal Waste", cn: 107, density: 144.2, moisture: 43, si: 1 },
+        { name: "Fair waste WSU 2010", category: "Food & Municipal Waste", cn: 36, density: 110.9, moisture: 42, si: 1 },
+        { name: "Fair waste WSU COTC", category: "Food & Municipal Waste", cn: 64, density: 151.3, moisture: 48, si: 1 },
+        { name: "Food Scraps CU COTC", category: "Food & Municipal Waste", cn: 20, density: 625.9, moisture: 75, si: 1 },
+        { name: "Food Waste WSU", category: "Food & Municipal Waste", cn: 14, density: 603.4, moisture: 65, si: 1 },
+        { name: "Food waste, salad NC COTC", category: "Food & Municipal Waste", cn: 12, density: 1246.5, moisture: 90, si: 1 },
+        { name: "Garbage (food waste)", category: "Food & Municipal Waste", cn: 15, density: 596.2, moisture: 40, si: 1 },
+        { name: "Kitchen and garden waste", category: "Food & Municipal Waste", cn: 15, density: 700.1, moisture: 60, si: 1 },
+        { name: "Sewage sludge 1", category: "Food & Municipal Waste", cn: 13, density: 836.5, moisture: 78, si: 1 },
+        { name: "Sewage sludge 2", category: "Food & Municipal Waste", cn: 10, density: 910.1, moisture: 38, si: 1 },
+        { name: "Food waste - dehydrated (SRJC)", category: "Food & Municipal Waste", cn: 16, density: 589.7, moisture: 19, si: 1 },
+        { name: "Paper pulp", category: "Wood & Paper", cn: 90, density: 835.9, moisture: 82, si: 8 },
+        { name: "Sawdust 1", category: "Wood & Paper", cn: 442, density: 240.3, moisture: 39, si: 8 },
+        { name: "Sawdust 2", category: "Wood & Paper", cn: 247, density: 240.3, moisture: 42, si: 8 },
+        { name: "Shrub trimmings", category: "Yard Trimmings & Vegetation", cn: 53, density: 259.9, moisture: 15, si: 5 },
+        { name: "Softwood (chips, shavings, and so on)", category: "Wood & Paper", cn: 641, density: 189.8, moisture: 20, si: 8 },
+        { name: "Woodchip mulch (SRJC)", category: "Wood & Paper", cn: 38, density: 710.2, moisture: 47, si: 8 },
+        { name: "Woodchips, Raw (SRJC)", category: "Wood & Paper", cn: 46, density: 310.9, moisture: 70, si: 8 },
+        { name: "Telephone books", category: "Wood & Paper", cn: 772, density: 149.5, moisture: 6, si: 8 },
+        { name: "Tree trimmings", category: "Yard Trimmings & Vegetation", cn: 16, density: 768.9, moisture: 70, si: 5 },
+        { name: "Wood Shavings/Sawdust", category: "Wood & Paper", cn: 500, density: 240.3, moisture: 20, si: 8 },
+        { name: "Woodchips, Softwood", category: "Wood & Paper", cn: 102, density: 240.3, moisture: 40, si: 8 },
+        { name: "Woodchips CU COTC", category: "Wood & Paper", cn: 100, density: 430.1, moisture: 45, si: 8 },
+        { name: "Cardboard", category: "Wood & Paper", cn: 378, density: 160.2, moisture: 8, si: 8 },
+        { name: "Corrugated cardboard", category: "Wood & Paper", cn: 563, density: 153.7, moisture: 8, si: 8 },
+        { name: "Grass (compacted)", category: "Yard Trimmings & Vegetation", cn: 15, density: 380.3, moisture: 52, si: 5 },
+        { name: "Grass (loose)", category: "Yard Trimmings & Vegetation", cn: 15, density: 178, moisture: 52, si: 5 },
+        { name: "Green Waste", category: "Yard Trimmings & Vegetation", cn: 53, density: 300.2, moisture: 30, si: 5 },
+        { name: "Greenhouse cleanout", category: "Yard Trimmings & Vegetation", cn: 21, density: 608.1, moisture: 70, si: 5 },
+        { name: "Ground green waste UCD COTC", category: "Yard Trimmings & Vegetation", cn: 47, density: 339.9, moisture: 41, si: 5 },
+        { name: "Ground greenwaste SRJC COTC", category: "Yard Trimmings & Vegetation", cn: 57, density: 348.8, moisture: 29, si: 5 },
+        { name: "Ground wood SUNY-C COTC", category: "Wood & Paper", cn: 61, density: 608.1, moisture: 30, si: 8 },
+        { name: "Hardwood (chips, shavings, and so on)", category: "Wood & Paper", cn: 560, density: 326.3, moisture: 50, si: 8 },
+        { name: "Landscape Browns", category: "Yard Trimmings & Vegetation", cn: 64, density: 148.3, moisture: 20, si: 5 },
+        { name: "Landscape Greens", category: "Yard Trimmings & Vegetation", cn: 13, density: 70, moisture: 24, si: 5 },
+        { name: "Leaves", category: "Yard Trimmings & Vegetation", cn: 54, density: 240.3, moisture: 65, si: 5 },
+        { name: "Leaves, NC COTC", category: "Yard Trimmings & Vegetation", cn: 54, density: 460.4, moisture: 52, si: 5 },
+        { name: "Leaves, Compacted and wet WSU", category: "Yard Trimmings & Vegetation", cn: 47, density: 537.5, moisture: 28, si: 5 },
+        { name: "Leaves, Compacted and moist Cornell", category: "Yard Trimmings & Vegetation", cn: 54, density: 290.7, moisture: 38, si: 5 },
+        { name: "Leaves, Fresh", category: "Yard Trimmings & Vegetation", cn: 37, density: 119.8, moisture: 10, si: 5 },
+        { name: "Leaves, Loose and dry 1", category: "Yard Trimmings & Vegetation", cn: 47, density: 88.4, moisture: 48, si: 5 },
+        { name: "Leaves, Loose and dry 2", category: "Yard Trimmings & Vegetation", cn: 54, density: 119.8, moisture: 15, si: 5 },
+        { name: "Mulch UNL", category: "Yard Trimmings & Vegetation", cn: 50, density: 259.9, moisture: 17, si: 5 },
+        { name: "Newsprint 1", category: "Wood & Paper", cn: 625, density: 160.2, moisture: 6, si: 8 },
+        { name: "Newsprint 2", category: "Wood & Paper", cn: 323, density: 160.2, moisture: 6, si: 8 },
+        { name: "Paper & Card Waste", category: "Wood & Paper", cn: 500, density: 160.2, moisture: 7, si: 8 },
+        { name: "Paper, Office", category: "Wood & Paper", cn: 129, density: 178, moisture: 28, si: 8 },
+        { name: "Woodchips SUNY-C COTC", category: "Wood & Paper", cn: 140, density: 312.1, moisture: 50, si: 8 },
+        { name: "Yard trimmings MSU 2007", category: "Yard Trimmings & Vegetation", cn: 21, density: 399.3, moisture: 61, si: 5 },
+        { name: "Yard trimmings MSU 2008", category: "Yard Trimmings & Vegetation", cn: 29, density: 399.9, moisture: 53, si: 5 },
+        { name: "Yard trimmings MSU 2009", category: "Yard Trimmings & Vegetation", cn: 43, density: 497.2, moisture: 58, si: 5 },
+        { name: "Yard trimmings MSU 2010", category: "Yard Trimmings & Vegetation", cn: 23, density: 474.6, moisture: 47, si: 5 },
+        { name: "Yard trimmings MSU COTC", category: "Yard Trimmings & Vegetation", cn: 28, density: 480.6, moisture: 51, si: 5 }
+    ];
+
+    window.onload = async () => {
+        migrateLibraryUnitsIfNeeded();
         loadLibrary();
-        addIngredientRow(); 
+        addIngredientRow();
         toggleVolumeUI();
         initDragAndDrop();
         checkTheme();
         await renderRecipeBook();
     };
+
+    // One-time migration: earlier versions stored custom ingredient density canonically as
+    // lb/yd3; the solver now works in kg/m3 internally, so existing saved values need converting
+    // once so they don't silently get reinterpreted under the new unit.
+    function migrateLibraryUnitsIfNeeded() {
+        if (localStorage.getItem('compostLibraryUnitSchema') === 'kgm3') return;
+        let customLib = JSON.parse(localStorage.getItem('compostLibrary')) || [];
+        if (customLib.length > 0) {
+            customLib = customLib.map(item => ({ ...item, density: item.density * KG_M3_PER_LB_YD3 }));
+            localStorage.setItem('compostLibrary', JSON.stringify(customLib));
+        }
+        localStorage.setItem('compostLibraryUnitSchema', 'kgm3');
+    }
 
     // --- Dark Mode ---
     function checkTheme() {
@@ -502,32 +694,133 @@
         document.getElementById('ingredient-library').innerHTML = fullLibrary.map(item => `<option value="${item.name}">`).join('');
     }
 
+    // Fixed display order for the Reference Database's collapsible category sections.
+    const CSV_CATEGORY_ORDER = [
+        'Manures & Animal Waste',
+        'Yard Trimmings & Vegetation',
+        'Wood & Paper',
+        'Food & Municipal Waste',
+        'Crop Residues & Processing Wastes',
+        'Straw, Hay & Silage',
+        'Meat, Fish & Animal By-Products',
+        'Liquids & Additives'
+    ];
+
     function openLibraryModal() {
+        document.getElementById('libDensityHeader').innerText = isMetricUnit() ? 'Density (kg/m³)' : 'Density (lb/yd³)';
+        renderCustomLibrarySection();
+        renderCsvLibrarySections();
+        const search = document.getElementById('libSearchInput');
+        search.value = '';
+        filterIngredientLibrary('');
+        document.getElementById('libraryModal').style.display = "flex";
+        search.focus();
+    }
+
+    function closeLibraryModal() { document.getElementById('libraryModal').style.display = "none"; }
+
+    function renderCustomLibrarySection() {
         const listContainer = document.getElementById('customLibraryList');
         let customLib = JSON.parse(localStorage.getItem('compostLibrary')) || [];
         const isMetric = isMetricUnit();
-        document.getElementById('libDensityHeader').innerText = isMetric ? 'Density (kg/m³)' : 'Density (lb/yd³)';
-        if(customLib.length === 0) {
-            listContainer.innerHTML = "<tr><td colspan='6' style='text-align:center;'>No custom ingredients saved.</td></tr>";
+        if (customLib.length === 0) {
+            listContainer.innerHTML = "<tr><td colspan='7' style='text-align:center; color: var(--muted);'>No custom ingredients saved yet. Use \"Save to Lib\" on the Ingredients tab to add one.</td></tr>";
         } else {
             listContainer.innerHTML = customLib.map((item, idx) => `
-                <tr id="libRow_${idx}">
+                <tr id="libRow_${idx}" class="lib-row" data-name="${item.name.toLowerCase()}">
                     <td><input type="text" value="${item.name}" style="min-width:100px;" oninput="document.getElementById('libBtn_${idx}').disabled=false"></td>
                     <td><input type="number" value="${item.cn}" style="width:60px;" oninput="document.getElementById('libBtn_${idx}').disabled=false"></td>
-                    <td><input type="number" value="${densityToDisplay(item.density, isMetric).toFixed(1)}" style="width:60px;" oninput="document.getElementById('libBtn_${idx}').disabled=false"></td>
+                    <td><input type="number" value="${densityToDisplay(item.density, isMetric).toFixed(1)}" style="width:70px;" oninput="document.getElementById('libBtn_${idx}').disabled=false"></td>
                     <td><input type="number" value="${item.moisture}" style="width:60px;" oninput="document.getElementById('libBtn_${idx}').disabled=false"></td>
                     <td><input type="number" value="${item.si}" style="width:50px;" oninput="document.getElementById('libBtn_${idx}').disabled=false"></td>
-                    <td style="display:flex; gap:5px;">
+                    <td><input type="number" class="lib-inv-input" placeholder="∞" style="width:60px;"></td>
+                    <td style="display:flex; gap:5px; flex-wrap: wrap;">
                         <button id="libBtn_${idx}" class="btn-save active-save" disabled onclick="updateCustomItem(${idx})">Save</button>
+                        <button class="btn-secondary" style="padding:5px 8px; font-size:0.8rem;" onclick="loadCustomItemToCalculator(${idx}, this)">Load</button>
                         <button class="remove-btn" style="font-size:1rem; padding: 5px;" onclick="deleteCustomItem(${idx})">🗑️</button>
                     </td>
                 </tr>
             `).join('');
         }
-        document.getElementById('libraryModal').style.display = "flex";
     }
 
-    function closeLibraryModal() { document.getElementById('libraryModal').style.display = "none"; }
+    function renderCsvLibrarySections() {
+        const container = document.getElementById('libCsvSections');
+        const isMetric = isMetricUnit();
+        const byCategory = {};
+        csvLibrary.forEach((item, idx) => {
+            (byCategory[item.category] = byCategory[item.category] || []).push(idx);
+        });
+        const orderedCats = CSV_CATEGORY_ORDER.filter(c => byCategory[c]);
+        container.innerHTML = orderedCats.map(cat => {
+            const idxs = byCategory[cat];
+            const rows = idxs.map(idx => {
+                const item = csvLibrary[idx];
+                return `
+                    <tr class="lib-row" data-name="${item.name.toLowerCase()}">
+                        <td>${item.name}</td>
+                        <td>${item.cn}</td>
+                        <td>${densityToDisplay(item.density, isMetric).toFixed(1)}</td>
+                        <td>${item.moisture}</td>
+                        <td>${item.si}</td>
+                        <td><input type="number" class="lib-inv-input" placeholder="∞" style="width:60px;"></td>
+                        <td><button class="btn-secondary" style="padding:5px 10px; font-size:0.8rem;" onclick="loadCsvItemToCalculator(${idx}, this)">Load</button></td>
+                    </tr>`;
+            }).join('');
+            return `
+                <details class="lib-category">
+                    <summary>${cat} <span style="font-weight: normal; color: var(--muted);">(${idxs.length})</span></summary>
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>Name</th><th>C:N</th><th>Density</th><th>Moist.</th><th>SI</th><th>Inventory</th><th>Load</th></tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </details>`;
+        }).join('');
+    }
+
+    // Filters both "Your Items" rows and Reference Database rows by name; auto-expands
+    // (and hides empty) category sections while a search query is active.
+    function filterIngredientLibrary(query) {
+        const q = query.trim().toLowerCase();
+        document.querySelectorAll('#libraryModal .lib-row').forEach(row => {
+            row.style.display = (!q || row.getAttribute('data-name').includes(q)) ? '' : 'none';
+        });
+        document.querySelectorAll('#libraryModal .lib-category').forEach(details => {
+            if (!q) { details.open = false; details.style.display = ''; return; }
+            const anyVisible = Array.from(details.querySelectorAll('.lib-row')).some(r => r.style.display !== 'none');
+            details.open = anyVisible;
+            details.style.display = anyVisible ? '' : 'none';
+        });
+    }
+
+    function loadItemDataToCalculator(itemData, invValue) {
+        addIngredientRow();
+        const rows = document.querySelectorAll('#ingredientBody tr');
+        const row = rows[rows.length - 1];
+        const isMetric = isMetricUnit();
+        row.querySelector('.ing-name').value = itemData.name;
+        row.querySelector('.ing-cn').value = itemData.cn;
+        row.querySelector('.ing-density').value = densityToDisplay(itemData.density, isMetric).toFixed(1);
+        row.querySelector('.ing-moisture').value = itemData.moisture;
+        row.querySelector('.ing-si').value = itemData.si;
+        if (invValue !== '' && invValue != null && !isNaN(parseFloat(invValue))) row.querySelector('.ing-avail').value = invValue;
+        closeLibraryModal();
+        showTab('tab3');
+        if (row.scrollIntoView) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function loadCsvItemToCalculator(idx, btn) {
+        const invInput = btn.closest('tr').querySelector('.lib-inv-input');
+        loadItemDataToCalculator(csvLibrary[idx], invInput ? invInput.value : '');
+    }
+
+    function loadCustomItemToCalculator(idx, btn) {
+        let customLib = JSON.parse(localStorage.getItem('compostLibrary')) || [];
+        const invInput = btn.closest('tr').querySelector('.lib-inv-input');
+        loadItemDataToCalculator(customLib[idx], invInput ? invInput.value : '');
+    }
 
     function updateCustomItem(idx) {
         const row = document.getElementById(`libRow_${idx}`);
@@ -666,21 +959,21 @@
         document.getElementById('calculatedVolUnit').innerText = isMetric ? 'm³' : 'cuyd';
     }
 
-    function getTargetVolumeCuyd() {
+    function getTargetVolumeM3() {
         const isMetric = document.getElementById('unitSelect').value === 'cubicmeters';
         if (document.getElementById('batchModeSelect').value === 'direct') {
             const val = parseFloat(document.getElementById('targetBatchVol').value) || 1.0;
-            return isMetric ? val * UNIT_CONVERSIONS.cubicmeters.toCuyd : val;
+            return isMetric ? val : val * M3_PER_CUYD;
         } else {
             const l = parseFloat(document.getElementById('dimL').value) || 0, w = parseFloat(document.getElementById('dimW').value) || 0, h = parseFloat(document.getElementById('dimH').value) || 0;
             const rawVol = w * h * 0.67 * l;
-            return isMetric ? rawVol * UNIT_CONVERSIONS.cubicmeters.toCuyd : rawVol / 27;
+            return isMetric ? rawVol : rawVol * M3_PER_FT3;
         }
     }
     function getUnitMultiplier() {
         const unit = document.getElementById('unitSelect').value;
-        if (unit === 'loader') return parseFloat(document.getElementById('customBucketVol').value) || 1.0;
-        return UNIT_CONVERSIONS[unit].toCuyd;
+        if (unit === 'loader') return (parseFloat(document.getElementById('customBucketVol').value) || 1.0) * M3_PER_CUYD;
+        return UNIT_CONVERSIONS[unit].toM3;
     }
 
     // --- Recipe Book / Persistence Logic ---
@@ -895,7 +1188,7 @@
             const savedUnit = (r.workbench && r.workbench.constraints && r.workbench.constraints.unit) || 'cuyd';
             const savedBucketVol = r.workbench && r.workbench.constraints ? r.workbench.constraints.customBucketVol : null;
             const savedUnitInfo = UNIT_CONVERSIONS[savedUnit] || UNIT_CONVERSIONS.cuyd;
-            const savedMultiplier = savedUnit === 'loader' ? (parseFloat(savedBucketVol) || 1.0) : savedUnitInfo.toCuyd;
+            const savedMultiplier = savedUnit === 'loader' ? (parseFloat(savedBucketVol) || 1.0) * M3_PER_CUYD : savedUnitInfo.toM3;
             const savedVolDisplay = res.gVol ? (res.gVol / savedMultiplier).toFixed(1) : '?';
             const savedIsMetric = savedUnit === 'cubicmeters';
             const savedDensDisplay = res.gDensity ? densityToDisplay(res.gDensity, savedIsMetric).toFixed(0) : '-';
@@ -960,26 +1253,26 @@
             let availableUI = parseFloat(row.querySelector('.ing-avail').value);
             
             if(!isNaN(cn) && !isNaN(density) && !isNaN(moisture)) {
-                let availCuyd = isNaN(availableUI) ? Infinity : availableUI * multiplier;
-                activeIngredients.push({ name, cn, density, moisture, si, availCuyd, totalUsedCuyd: 0, exhausted: false }); 
+                let availM3 = isNaN(availableUI) ? Infinity : availableUI * multiplier;
+                activeIngredients.push({ name, cn, density, moisture, si, availM3, totalUsedM3: 0, exhausted: false }); 
             }
         });
 
         if (activeIngredients.length < 2) return alert("Please fill out at least two valid ingredients.");
 
-        let targetBatchVolCuyd = getTargetVolumeCuyd();
-        let remainingTargetVol = targetBatchVolCuyd;
+        let targetBatchVolM3 = getTargetVolumeM3();
+        let remainingTargetVol = targetBatchVolM3;
         let phases = [];
         let globalHaltReason = null;
 
         const evalFractionalScore = (ratio) => {
             let tV = 0, tW = 0, tM = 0, tD = 0, tN = 0;
             ratio.forEach(ing => {
-                const volCuyd = ing.frac; 
-                const weight = volCuyd * ing.density;
+                const volM3 = ing.frac; 
+                const weight = volM3 * ing.density;
                 const mWeight = weight * (ing.moisture / 100);
                 const dWeight = weight - mWeight;
-                tV += volCuyd; tW += weight; tM += mWeight; tD += dWeight; tN += (dWeight / ing.cn);
+                tV += volM3; tW += weight; tM += mWeight; tD += dWeight; tN += (dWeight / ing.cn);
             });
             const m = (tM / tW) * 100; const d = tW / tV; const cn = tD / tN;
 
@@ -992,17 +1285,17 @@
         const calcMetrics = (volArray) => {
             let tV = 0, tW = 0, tM = 0, tD = 0, tN = 0, tSI = 0;
             volArray.forEach(ing => {
-                const weight = ing.volCuyd * ing.origIng.density;
+                const weight = ing.volM3 * ing.origIng.density;
                 const mWeight = weight * (ing.origIng.moisture / 100);
                 const dWeight = weight - mWeight;
-                tV += ing.volCuyd; tW += weight; tM += mWeight; tD += dWeight; tN += (dWeight / ing.origIng.cn);
-                tSI += (ing.volCuyd * ing.origIng.si);
+                tV += ing.volM3; tW += weight; tM += mWeight; tD += dWeight; tN += (dWeight / ing.origIng.cn);
+                tSI += (ing.volM3 * ing.origIng.si);
             });
             return { m: (tM / tW) * 100, d: tW / tV, cn: tD / tN, si: tSI / tV, weight: tW };
         };
 
         while (remainingTargetVol > 0.05) {
-            let available = activeIngredients.filter(i => i.availCuyd > 0.05 && !i.exhausted);
+            let available = activeIngredients.filter(i => i.availM3 > 0.05 && !i.exhausted);
             if (available.length === 0) { globalHaltReason = "Ran out of all available inventory limits."; break; }
 
             let ratio = available.map(ing => ({...ing, frac: 1.0 / available.length}));
@@ -1031,42 +1324,42 @@
             ratio.forEach(ing => {
                 if (ing.frac > 0.001) {
                     let mainIng = activeIngredients.find(i => i.name === ing.name);
-                    let limit = mainIng.availCuyd / ing.frac;
+                    let limit = mainIng.availM3 / ing.frac;
                     if (limit < maxScale) { maxScale = limit; limitingIng = mainIng.name; }
                 }
             });
 
-            let phaseVolCuyd = Math.min(remainingTargetVol, maxScale);
-            if (phaseVolCuyd < 0.05) break; 
+            let phaseVolM3 = Math.min(remainingTargetVol, maxScale);
+            if (phaseVolM3 < 0.05) break; 
 
             let phaseDetails = {
                 phaseNum: phases.length + 1,
-                volumeCuyd: phaseVolCuyd,
-                targetPct: (phaseVolCuyd / targetBatchVolCuyd) * 100,
+                volumeM3: phaseVolM3,
+                targetPct: (phaseVolM3 / targetBatchVolM3) * 100,
                 ingredients: [],
-                limiting: (phaseVolCuyd === maxScale && maxScale !== Infinity) ? limitingIng : null
+                limiting: (phaseVolM3 === maxScale && maxScale !== Infinity) ? limitingIng : null
             };
 
             ratio.forEach(ing => {
-                let usedVol = ing.frac * phaseVolCuyd;
+                let usedVol = ing.frac * phaseVolM3;
                 if (usedVol > 0.001) {
                     let mainIng = activeIngredients.find(i => i.name === ing.name);
-                    mainIng.availCuyd -= usedVol;
-                    mainIng.totalUsedCuyd += usedVol;
-                    if (mainIng.availCuyd < 0.05) mainIng.exhausted = true;
-                    phaseDetails.ingredients.push({ name: ing.name, volCuyd: usedVol, origIng: mainIng });
+                    mainIng.availM3 -= usedVol;
+                    mainIng.totalUsedM3 += usedVol;
+                    if (mainIng.availM3 < 0.05) mainIng.exhausted = true;
+                    phaseDetails.ingredients.push({ name: ing.name, volM3: usedVol, origIng: mainIng });
                 }
             });
 
             phaseDetails.metrics = calcMetrics(phaseDetails.ingredients);
             phases.push(phaseDetails);
-            remainingTargetVol -= phaseVolCuyd;
+            remainingTargetVol -= phaseVolM3;
         }
 
-        renderPhasedResults(phases, activeIngredients, targetBatchVolCuyd, globalHaltReason, dynTargets, orderedIds);
+        renderPhasedResults(phases, activeIngredients, targetBatchVolM3, globalHaltReason, dynTargets, orderedIds);
     }
 
-    function renderPhasedResults(phases, allIngredients, targetVolCuyd, haltReason, dynTargets, orderedIds) {
+    function renderPhasedResults(phases, allIngredients, targetVolM3, haltReason, dynTargets, orderedIds) {
         showTab('tab4');
         const container = document.getElementById('results-container');
         if(!container) return; // Prevent errors if DOM missing
@@ -1083,11 +1376,11 @@
 
             let gVol = 0, gWeight = 0, gMoistW = 0, gDryW = 0, gN = 0, gSI = 0;
             allIngredients.forEach(ing => {
-                if(ing.totalUsedCuyd > 0) {
-                    gVol += ing.totalUsedCuyd;
-                    let w = ing.totalUsedCuyd * ing.density;
+                if(ing.totalUsedM3 > 0) {
+                    gVol += ing.totalUsedM3;
+                    let w = ing.totalUsedM3 * ing.density;
                     let mw = w * (ing.moisture / 100); let dw = w - mw;
-                    gWeight += w; gMoistW += mw; gDryW += dw; gN += (dw / ing.cn); gSI += (ing.totalUsedCuyd * ing.si);
+                    gWeight += w; gMoistW += mw; gDryW += dw; gN += (dw / ing.cn); gSI += (ing.totalUsedM3 * ing.si);
                 }
             });
             const gMoisture = (gMoistW / gWeight) * 100;
@@ -1120,27 +1413,27 @@
             const sortedMetricsHtml = orderedIds.map(id => healthBlocks[id]).join('');
 
             let haltHtml = '';
-            if (haltReason || (targetVolCuyd - gVol) > 0.1) {
-                haltHtml = `<div style="background: rgba(220,53,69,0.1); color: var(--danger); padding: 15px; border: 1px solid var(--danger); border-radius: 5px; margin-bottom: 20px;"><strong>⚠️ Pile Halted at ${(gVol / multiplier).toFixed(1)} ${unitName} </strong> (Target was ${(targetVolCuyd / multiplier).toFixed(1)} ${unitName}).<br><em>Reason: ${haltReason || "Insufficient inventory limits."}</em></div>`;
+            if (haltReason || (targetVolM3 - gVol) > 0.1) {
+                haltHtml = `<div style="background: rgba(220,53,69,0.1); color: var(--danger); padding: 15px; border: 1px solid var(--danger); border-radius: 5px; margin-bottom: 20px;"><strong>⚠️ Pile Halted at ${(gVol / multiplier).toFixed(1)} ${unitName} </strong> (Target was ${(targetVolM3 / multiplier).toFixed(1)} ${unitName}).<br><em>Reason: ${haltReason || "Insufficient inventory limits."}</em></div>`;
             } else {
                 haltHtml = `<div style="background: rgba(40,167,69,0.1); color: var(--success); padding: 15px; border: 1px solid var(--success); border-radius: 5px; margin-bottom: 20px; text-align: center;"><strong>✅ Target Volume Reached Successfully!</strong></div>`;
             }
 
-            let summaryRows = allIngredients.filter(i => i.totalUsedCuyd > 0).map(ing => {
+            let summaryRows = allIngredients.filter(i => i.totalUsedM3 > 0).map(ing => {
                 let note = ing.exhausted ? `<span style="color: var(--danger); font-size: 0.85rem; font-weight: bold;">(Exhausted)</span>` : "";
-                let amountInUnit = (ing.totalUsedCuyd / multiplier).toFixed(1);
+                let amountInUnit = (ing.totalUsedM3 / multiplier).toFixed(1);
                 return `<tr><td><strong>${ing.name}</strong> ${note}</td><td>${amountInUnit} ${unitName}</td></tr>`;
             }).join('');
 
             let phaseCards = phases.map(p => {
-                let ingList = p.ingredients.map(i => `<div class="phase-ing"><span>${i.name}</span> <strong>${(i.volCuyd / multiplier).toFixed(1)} ${unitName}</strong></div>`).join('');
+                let ingList = p.ingredients.map(i => `<div class="phase-ing"><span>${i.name}</span> <strong>${(i.volM3 / multiplier).toFixed(1)} ${unitName}</strong></div>`).join('');
                 let limitBadge = p.limiting ? `<div class="exhausted-badge">Ran out of ${p.limiting}</div>` : `<div style="color: var(--success); font-size: 0.8rem; margin-top: 5px; font-weight: bold;">Target Hit</div>`;
                 return `
                 <div class="phase-card">
                     <h4 style="text-align: center;">Phase ${p.phaseNum}</h4>
                     <div style="background: var(--card-bg); border-radius: 5px; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); text-align: center;">
                         <span style="font-size: 0.8rem; color: var(--muted); display: block; margin-bottom: 2px;">Target Volume Added</span>
-                        <strong style="font-size: 1.2rem; display: block; color: var(--primary);">${(p.volumeCuyd / multiplier).toFixed(1)} ${unitName} <small style="color: var(--muted);">(${p.targetPct.toFixed(0)}%)</small></strong>
+                        <strong style="font-size: 1.2rem; display: block; color: var(--primary);">${(p.volumeM3 / multiplier).toFixed(1)} ${unitName} <small style="color: var(--muted);">(${p.targetPct.toFixed(0)}%)</small></strong>
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 15px; text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
                         <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 8px 4px;"><span style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom: 2px;">Moisture</span><strong style="font-size:1rem;">${p.metrics.m.toFixed(1)}%</strong></div>
@@ -1152,7 +1445,7 @@
             }).join('');
 
             // Generate Auto-Name
-            const activeIngs = allIngredients.filter(i => i.totalUsedCuyd > 0).sort((a,b) => b.totalUsedCuyd - a.totalUsedCuyd);
+            const activeIngs = allIngredients.filter(i => i.totalUsedM3 > 0).sort((a,b) => b.totalUsedM3 - a.totalUsedM3);
             const defaultName = activeIngs.slice(0, 3).map(i => i.name.split(' ')[0]).join(' + ') + " Mix";
             
             let btnText = currentLoadedRecipeId ? "Update Existing Recipe" : "Save New Recipe";
@@ -1173,7 +1466,7 @@
                         <h3 style="text-align: center;">Total Pile Yield</h3>
                         <div class="results-panel">
                             <p style="margin: 0 0 10px 0; font-size: 1.2rem;"><strong>${(gVol / multiplier).toFixed(2)} ${unitName}</strong> built</p>
-                            <p style="margin: 0; color: var(--muted);">${(gWeight / 2000).toFixed(2)} Tons</p>
+                            <p style="margin: 0; color: var(--muted);">${isMetric ? (gWeight / 1000).toFixed(2) + ' Metric Tons' : (gWeight / KG_PER_LB / 2000).toFixed(2) + ' Tons'}</p>
                         </div>
                     </div>
                     <div style="flex: 2; min-width: 300px;">

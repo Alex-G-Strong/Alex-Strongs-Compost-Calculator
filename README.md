@@ -37,7 +37,7 @@ Set up the batch before adding ingredients:
 
 **Optimization Priorities & Ranges** — drag the three cards (using the `≡` handle) into the order that matters most to you:
 - **Moisture (%)** — target 55–65%. Too dry slows decomposition; too wet goes anaerobic and smells.
-- **Density (lb/yd³)** — target 600–800. A proxy for porosity/airflow.
+- **Density (lb/yd³ or kg/m³)** — target 600–800 lb/yd³ (≈356–475 kg/m³ if Cubic Meters is selected). A proxy for porosity/airflow.
 - **C:N Ratio** — target 25–35. The carbon ("browns") to nitrogen ("greens") balance that feeds the microbes.
 
 You can edit the min/max range for each metric. **The solver strictly prioritizes whichever card is on top** — if your feedstocks can't satisfy all three ranges at once, it sacrifices the lowest-ranked one first.
@@ -47,14 +47,20 @@ Click **Next: Add Ingredients →** when ready.
 ### 3. Ingredients
 Build your list of available feedstocks. For each row:
 
-- **Ingredient Name** — start typing to autocomplete from the built-in library (Horse Manure, Wood Chips, Grass Clippings, Cow Manure, Poultry Manure, Vegetable Scraps, Coffee Grounds, Dry Leaves, Straw, Cardboard/Paper, Sawdust, Food Waste) or your own saved custom items. Picking a known name auto-fills the fields below.
+- **Ingredient Name** — start typing to autocomplete from the built-in library (Horse Manure, Wood Chips, Grass Clippings, Cow Manure, Poultry Manure, Vegetable Scraps, Coffee Grounds, Dry Leaves, Straw, Cardboard/Paper, Sawdust, Food Waste) or your own saved custom items. Picking a known name auto-fills the fields below. This autocomplete is intentionally limited to that short list plus your own items — it does **not** search the large reference database below (use the Ingredient Library modal for that).
 - **C:N** — carbon-to-nitrogen ratio.
-- **Density** — bulk weight in lb/yd³.
+- **Density** — bulk weight in lb/yd³ (or kg/m³ if Cubic Meters is the active unit).
 - **Moist.** — moisture percentage.
 - **Struct.** (Structural Index, 1–10) — resistance to compaction. 10 = rigid (wood chips), 1 = mushy (food waste). See the FAQ tab for why this matters.
 - **Avail. Inventory** — the maximum amount you actually have on hand, in whatever unit you chose in Constraints. Leave blank for unlimited. **The solver will never exceed this limit.**
 
-For a feedstock not in the library, fill in the values yourself (lab test results, a web search, or a reasonable estimate) and click **Save to Lib** to reuse it in future recipes. Manage or delete saved custom ingredients any time via **Manage Saved Items**.
+For a feedstock not in the library, fill in the values yourself (lab test results, a web search, or a reasonable estimate) and click **Save to Lib** to reuse it in future recipes.
+
+**📚 Ingredient Library** (button at the top of this tab) opens a much larger reference tool:
+- **Your Items** — your own saved custom ingredients (editable in place, with Save/Load/Delete).
+- **Reference Database** — 134 real, named feedstocks (manures, yard trimmings, wood & paper, food waste, crop residues, straw/hay/silage, meat/fish by-products, liquids) pulled from [`categorized_compost_database.csv`](categorized_compost_database.csv), grouped into collapsible categories with C:N, Density, Moisture, and SI shown for each.
+- A **search bar** filters both sections live by name and auto-expands any category with a match.
+- Each row has an optional **Inventory** field and a **Load** button — set an amount (or leave blank for unlimited) and click Load to drop that ingredient straight into a new row on your Ingredients tab.
 
 Click **+ Add Row** to add more feedstocks (you need at least 2), then **Generate Phased Operations Sheet →** to run the solver.
 
@@ -72,31 +78,33 @@ This tab shows what the solver came up with:
 ### 5. Docs & FAQ
 In-app reference covering:
 - How to move recipes between devices (export/import via AirDrop or Nearby Share).
+- **Troubleshooting: why can't I see my prior recipes or ingredients?** — covers the browser-scoped storage caveat below.
 - What the Structural Index means and why the average must stay above 5.0.
 - The math behind the solver (see below).
 
 ## How the Solver Works
 
+- **Canonical metric backend** — internally, all math runs in cubic meters, kg/m³, and kilograms, regardless of what unit you have selected. Every other unit (cubic yards, feet, lb/yd³, wheelbarrows, buckets, US tons) is converted to/from those canonical values only at the display/input boundary. This keeps the core formulas simple and makes the two unit systems fully interoperable — solving the same physical batch in imperial or metric produces the same underlying result.
 - **Strict-to-relaxed priority weighting** — your drag-and-drop order assigns penalty weights (1000 / 100 / 10) to deviations from the moisture, density, and C:N targets. The top-ranked metric dominates the search, so it's satisfied first if a perfect blend isn't possible.
 - **Stochastic hill-climbing** — rather than a heavy linear/matrix solver, the app randomly nudges the ingredient ratio (in 5% steps, up to 5,000 iterations) and keeps any change that lowers the total penalty score, until it converges or runs out of iterations.
 - **Multi-phase fractional optimization** — the pile is built in phases to respect hard inventory caps. Each phase finds the best ratio for the ingredients still available, scales it up until one of them is exhausted, then starts a new phase with whatever's left. This mirrors how you'd actually build a pile on the pad as feedstocks run out.
 
 ## Data & Privacy
 
-Everything lives entirely in your browser:
+Everything lives entirely in your browser, tied to that specific browser + device:
 - Saved recipes → browser `IndexedDB`.
 - Custom ingredient library and dark mode preference → browser `localStorage`.
 
-Nothing is sent to a server. Clearing your browser data will erase saved recipes — use **Export All** periodically to back them up.
+Nothing is sent to a server. This data **will not appear** if you open the calculator in a different browser, a different device/user account, an incognito/private window, or after clearing that browser's site data — it isn't synced anywhere by default. Use **Export All** (Recipe Book tab) periodically to back up your recipes and to move them to another browser/device via **Import**.
 
 ## Repo Contents
 
 | File | Purpose |
 |---|---|
 | [`alexs-compost-calculator_v2.html`](alexs-compost-calculator_v2.html) | The app itself — open this in a browser. |
-| [`categorized_compost_database.csv`](categorized_compost_database.csv) | A 136-feedstock reference database (name, category, C:N, bulk density, moisture). **Not currently wired into the app** — the in-app library is a separate, smaller, hand-picked 12-item list. |
-| [`feedstock_array.js.txt`](feedstock_array.js.txt) | Generated JS array built from the CSV via `gen_feedstock.py`, intended to eventually replace/extend the in-app library. **Not currently loaded by the app.** |
-| [`gen_feedstock.py`](gen_feedstock.py) | Script that converts the CSV into the JS feedstock array above. |
+| [`categorized_compost_database.csv`](categorized_compost_database.csv) | Source data for the 134-item Reference Database in the in-app Ingredient Library (name, category, C:N, bulk density, moisture). |
+| [`feedstock_array.js.txt`](feedstock_array.js.txt) | Generated JS array built from the CSV via `gen_feedstock.py` — mirrors exactly what's embedded as `csvLibrary` in the HTML file. If you edit the CSV, rerun the script and paste the output back into the HTML. |
+| [`gen_feedstock.py`](gen_feedstock.py) | Script that converts the CSV into the JS array above (converts density to canonical kg/m³, dedupes by name). |
 | [`compostcalc_full_database.png`](compostcalc_full_database.png) | Reference image of the full feedstock database. |
 | [`READ_ME_compost-optimizer.md`](READ_ME_compost-optimizer.md) | Developer-facing architecture notes. |
 | [`documentation/`](documentation/) | Copy of this README, kept for reference alongside future docs. |
