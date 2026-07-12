@@ -138,7 +138,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Name</th><th>C:N</th><th>Density</th><th>Moist.</th><th>SI</th><th>Actions</th>
+                        <th>Name</th><th>C:N</th><th id="libDensityHeader">Density (lb/yd³)</th><th>Moist.</th><th>SI</th><th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="customLibraryList"></tbody>
@@ -223,7 +223,7 @@
         </li>
         <li class="draggable-item" draggable="true" data-id="density">
             <span class="drag-handle">≡</span>
-            <strong style="width: 140px;">Density (lb/yd³) <span class="info-icon" title="Target: 600-800. A proxy for porosity. Dense piles lack oxygen; light piles lack mass to retain heat.">ⓘ</span></strong>
+            <strong style="width: 140px;"><span id="densityPriorityLabel">Density (lb/yd³)</span> <span class="info-icon" title="A proxy for porosity. Dense piles lack oxygen; light piles lack mass to retain heat.">ⓘ</span></strong>
             <div class="range-inputs">
                 <label>Min: <input type="number" id="tgt-density-min" value="600"></label>
                 <label>Max: <input type="number" id="tgt-density-max" value="800"></label>
@@ -256,10 +256,10 @@
             <thead>
                 <tr>
                     <th>Ingredient Name</th>
-                    <th>C:N <span class="info-icon" title="Carbon percentage divided by Nitrogen percentage">ⓘ</span></th>
-                    <th>Density <span class="info-icon" title="Bulk weight in lbs per cubic yard">ⓘ</span><br><small>(lb/yd³)</small></th>
+                    <th>C:N <span class="info-icon" title="% Carbon divided by % Nitrogen, often provided by lab tests.">ⓘ</span></th>
+                    <th>Density <span id="densityInfoIcon" class="info-icon" title="Bulk weight in lbs per cubic yard">ⓘ</span><br><small id="densityUnitHeader">(lb/yd³)</small></th>
                     <th>Moist. <span class="info-icon" title="Percentage of total mass that is water">ⓘ</span><br><small>(%)</small></th>
-                    <th>Struct. <span class="info-icon" title="Resistance to compaction. 10 = rigid (woodchips), 1 = mushy (food waste).">ⓘ</span><br><small>(1-10)</small></th>
+                    <th>Struct. <span class="info-icon" title="Estimate of feedstock's resistance to compaction. 10 = rigid (woodchips), 1 = mushy (food waste). See Docs and FAQ for more">ⓘ</span><br><small>(1-10)</small></th>
                     <th id="availHeader">Avail. Inventory <span class="info-icon" title="The maximum amount you currently have. The solver will NOT exceed this limit.">ⓘ</span><br><small>(Cubic Yards)</small></th>
                     <th style="width: 70px;">Action</th>
                     <th style="width: 40px;"></th>
@@ -336,8 +336,16 @@
 <script>
     // --- Global State & IndexedDB Engine ---
     let fullLibrary = [];
-    let currentLoadedRecipeId = null; 
+    let currentLoadedRecipeId = null;
     let latestSimulationData = null;
+    let densityUnitIsMetric = false; // tracks whether density fields are currently displayed in kg/m3
+
+    // Density is stored canonically as lb/yd3 everywhere (library, saved recipes).
+    // These helpers convert to/from the kg/m3 display shown when Cubic Meters is the active unit.
+    const KG_M3_PER_LB_YD3 = 0.593276;
+    function isMetricUnit() { return document.getElementById('unitSelect').value === 'cubicmeters'; }
+    function densityToDisplay(canonicalLbYd3, isMetric) { return isMetric ? canonicalLbYd3 * KG_M3_PER_LB_YD3 : canonicalLbYd3; }
+    function densityToCanonical(displayVal, isMetric) { return isMetric ? displayVal / KG_M3_PER_LB_YD3 : displayVal; }
 
     // IndexedDB wrapper for Recipes
     const dbPromise = new Promise((resolve, reject) => {
@@ -497,6 +505,8 @@
     function openLibraryModal() {
         const listContainer = document.getElementById('customLibraryList');
         let customLib = JSON.parse(localStorage.getItem('compostLibrary')) || [];
+        const isMetric = isMetricUnit();
+        document.getElementById('libDensityHeader').innerText = isMetric ? 'Density (kg/m³)' : 'Density (lb/yd³)';
         if(customLib.length === 0) {
             listContainer.innerHTML = "<tr><td colspan='6' style='text-align:center;'>No custom ingredients saved.</td></tr>";
         } else {
@@ -504,7 +514,7 @@
                 <tr id="libRow_${idx}">
                     <td><input type="text" value="${item.name}" style="min-width:100px;" oninput="document.getElementById('libBtn_${idx}').disabled=false"></td>
                     <td><input type="number" value="${item.cn}" style="width:60px;" oninput="document.getElementById('libBtn_${idx}').disabled=false"></td>
-                    <td><input type="number" value="${item.density}" style="width:60px;" oninput="document.getElementById('libBtn_${idx}').disabled=false"></td>
+                    <td><input type="number" value="${densityToDisplay(item.density, isMetric).toFixed(1)}" style="width:60px;" oninput="document.getElementById('libBtn_${idx}').disabled=false"></td>
                     <td><input type="number" value="${item.moisture}" style="width:60px;" oninput="document.getElementById('libBtn_${idx}').disabled=false"></td>
                     <td><input type="number" value="${item.si}" style="width:50px;" oninput="document.getElementById('libBtn_${idx}').disabled=false"></td>
                     <td style="display:flex; gap:5px;">
@@ -518,14 +528,14 @@
     }
 
     function closeLibraryModal() { document.getElementById('libraryModal').style.display = "none"; }
-    
+
     function updateCustomItem(idx) {
         const row = document.getElementById(`libRow_${idx}`);
         const inputs = row.querySelectorAll('input');
         let customLib = JSON.parse(localStorage.getItem('compostLibrary')) || [];
         customLib[idx] = {
             name: inputs[0].value, cn: parseFloat(inputs[1].value),
-            density: parseFloat(inputs[2].value), moisture: parseFloat(inputs[3].value),
+            density: densityToCanonical(parseFloat(inputs[2].value), isMetricUnit()), moisture: parseFloat(inputs[3].value),
             si: parseFloat(inputs[4].value)
         };
         localStorage.setItem('compostLibrary', JSON.stringify(customLib));
@@ -544,10 +554,11 @@
     function addIngredientRow() {
         const tbody = document.getElementById('ingredientBody');
         const row = document.createElement('tr');
+        const densityPlaceholder = isMetricUnit() ? Math.round(densityToDisplay(600, true)) : 600;
         row.innerHTML = `
             <td><input type="text" class="ing-name" list="ingredient-library" placeholder="Name..." onchange="autofillRow(this)"></td>
             <td><input type="number" class="ing-cn ing-num" placeholder="30" oninput="markAsEdited(this)"></td>
-            <td><input type="number" class="ing-density ing-num" placeholder="600" oninput="markAsEdited(this)"></td>
+            <td><input type="number" class="ing-density ing-num" placeholder="${densityPlaceholder}" oninput="markAsEdited(this)"></td>
             <td><input type="number" class="ing-moisture ing-num" placeholder="50" oninput="markAsEdited(this)"></td>
             <td><input type="number" class="ing-si ing-num" placeholder="5" min="1" max="10" oninput="markAsEdited(this)"></td>
             <td><input type="number" class="ing-avail ing-num" placeholder="∞"></td>
@@ -562,7 +573,7 @@
         const item = fullLibrary.find(i => i.name.toLowerCase() === inputElement.value.trim().toLowerCase());
         if (item) {
             row.querySelector('.ing-cn').value = item.cn;
-            row.querySelector('.ing-density').value = item.density;
+            row.querySelector('.ing-density').value = densityToDisplay(item.density, isMetricUnit()).toFixed(1);
             row.querySelector('.ing-moisture').value = item.moisture;
             row.querySelector('.ing-si').value = item.si || 5;
             const btn = row.querySelector('.btn-save');
@@ -577,7 +588,7 @@
         const row = btn.closest('tr');
         const name = row.querySelector('.ing-name').value.trim();
         const cn = parseFloat(row.querySelector('.ing-cn').value);
-        const density = parseFloat(row.querySelector('.ing-density').value);
+        const density = densityToCanonical(parseFloat(row.querySelector('.ing-density').value), isMetricUnit());
         const moisture = parseFloat(row.querySelector('.ing-moisture').value);
         const si = parseFloat(row.querySelector('.ing-si').value) || 5;
 
@@ -618,6 +629,28 @@
         document.getElementById('dimFormulaNote').innerText = isMetric
             ? 'Calculates cubic meters using a parabolic profile (Base × Height × 0.67 × Length).'
             : 'Calculates cubic yards using a parabolic profile (Base × Height × 0.67 × Length).';
+
+        convertDensityFieldsForUnitChange(isMetric);
+        document.getElementById('densityPriorityLabel').innerText = isMetric ? 'Density (kg/m³)' : 'Density (lb/yd³)';
+        document.getElementById('densityUnitHeader').innerText = isMetric ? '(kg/m³)' : '(lb/yd³)';
+        document.getElementById('densityInfoIcon').title = isMetric ? 'Bulk weight in kilograms per cubic meter' : 'Bulk weight in lbs per cubic yard';
+    }
+
+    // Keeps density values semantically correct when the unit toggles between metric and imperial
+    // by converting whatever is currently typed in-place (rather than leaving stale numbers under a new label).
+    function convertDensityFieldsForUnitChange(newIsMetric) {
+        if (newIsMetric === densityUnitIsMetric) return;
+        const convert = (val) => newIsMetric ? val * KG_M3_PER_LB_YD3 : val / KG_M3_PER_LB_YD3;
+        document.querySelectorAll('.ing-density').forEach(inp => {
+            const v = parseFloat(inp.value);
+            if (!isNaN(v)) inp.value = convert(v).toFixed(1);
+        });
+        ['tgt-density-min', 'tgt-density-max'].forEach(id => {
+            const el = document.getElementById(id);
+            const v = parseFloat(el.value);
+            if (!isNaN(v)) el.value = Math.round(convert(v));
+        });
+        densityUnitIsMetric = newIsMetric;
     }
 
     function updateCalculatedVol() {
@@ -864,13 +897,16 @@
             const savedUnitInfo = UNIT_CONVERSIONS[savedUnit] || UNIT_CONVERSIONS.cuyd;
             const savedMultiplier = savedUnit === 'loader' ? (parseFloat(savedBucketVol) || 1.0) : savedUnitInfo.toCuyd;
             const savedVolDisplay = res.gVol ? (res.gVol / savedMultiplier).toFixed(1) : '?';
+            const savedIsMetric = savedUnit === 'cubicmeters';
+            const savedDensDisplay = res.gDensity ? densityToDisplay(res.gDensity, savedIsMetric).toFixed(0) : '-';
+            const savedDensUnit = savedIsMetric ? 'kg/m³' : 'lb/yd³';
 
             let inspectHtml = `
                 <details>
                     <summary>Inspect Results</summary>
                     <div style="margin-top: 10px; font-size: 0.85rem;">
                         <strong>Phases Built:</strong> ${res.phases ? res.phases.length : 0}<br>
-                        <strong>Final Metrics:</strong> Moisture: ${res.gMoisture ? res.gMoisture.toFixed(1) : '-'}% | C:N: ${res.gCN ? res.gCN.toFixed(1) : '-'} | Dens: ${res.gDensity ? res.gDensity.toFixed(0) : '-'}<br>
+                        <strong>Final Metrics:</strong> Moisture: ${res.gMoisture ? res.gMoisture.toFixed(1) : '-'}% | C:N: ${res.gCN ? res.gCN.toFixed(1) : '-'} | Dens: ${savedDensDisplay} ${savedDensUnit}<br>
                     </div>
                 </details>`;
             
@@ -904,12 +940,13 @@
         const orderedIds = Array.from(orderNodes).map(node => node.getAttribute('data-id'));
         const weights = { [orderedIds[0]]: 1000, [orderedIds[1]]: 100, [orderedIds[2]]: 10 };
         
+        const isMetric = isMetricUnit();
         const dynTargets = {
             moisture: { min: parseFloat(document.getElementById('tgt-moisture-min').value), max: parseFloat(document.getElementById('tgt-moisture-max').value) },
-            density: { min: parseFloat(document.getElementById('tgt-density-min').value), max: parseFloat(document.getElementById('tgt-density-max').value) },
+            density: { min: densityToCanonical(parseFloat(document.getElementById('tgt-density-min').value), isMetric), max: densityToCanonical(parseFloat(document.getElementById('tgt-density-max').value), isMetric) },
             cn: { min: parseFloat(document.getElementById('tgt-cn-min').value), max: parseFloat(document.getElementById('tgt-cn-max').value) }
         };
-        
+
         const rows = document.querySelectorAll('#ingredientBody tr');
         let activeIngredients = [];
         const multiplier = getUnitMultiplier();
@@ -917,7 +954,7 @@
         rows.forEach((row) => {
             const name = row.querySelector('.ing-name').value || "Unnamed Item";
             const cn = parseFloat(row.querySelector('.ing-cn').value);
-            const density = parseFloat(row.querySelector('.ing-density').value);
+            const density = densityToCanonical(parseFloat(row.querySelector('.ing-density').value), isMetric);
             const moisture = parseFloat(row.querySelector('.ing-moisture').value);
             const si = parseFloat(row.querySelector('.ing-si').value) || 5;
             let availableUI = parseFloat(row.querySelector('.ing-avail').value);
@@ -1069,9 +1106,15 @@
             const cnS = getStatus(gCN, dynTargets.cn.min, dynTargets.cn.max);
             const siS = gAvgSI >= 5 ? "good" : "bad";
 
+            const isMetric = document.getElementById('unitSelect').value === 'cubicmeters';
+            const densityUnitLabel = isMetric ? 'kg/m³' : 'lb/yd³';
+            const displayDensity = densityToDisplay(gDensity, isMetric);
+            const displayDensityMin = densityToDisplay(dynTargets.density.min, isMetric);
+            const displayDensityMax = densityToDisplay(dynTargets.density.max, isMetric);
+
             const healthBlocks = {
                 moisture: `<div class="metric-box ${mS}"><span style="display: block; font-size: 0.85rem; margin-bottom: 2px;">Moisture</span><strong style="display: block; font-size: 1.3rem;">${gMoisture.toFixed(1)}%</strong><span style="display: block; font-size: 0.75rem; margin-top: 2px;">(Target: ${dynTargets.moisture.min}-${dynTargets.moisture.max})</span></div>`,
-                density: `<div class="metric-box ${dS}"><span style="display: block; font-size: 0.85rem; margin-bottom: 2px;">Bulk Density</span><strong style="display: block; font-size: 1.3rem;">${gDensity.toFixed(0)}</strong><span style="display: block; font-size: 0.75rem; margin-top: 2px;">(Target: ${dynTargets.density.min}-${dynTargets.density.max})</span></div>`,
+                density: `<div class="metric-box ${dS}"><span style="display: block; font-size: 0.85rem; margin-bottom: 2px;">Bulk Density (${densityUnitLabel})</span><strong style="display: block; font-size: 1.3rem;">${displayDensity.toFixed(0)}</strong><span style="display: block; font-size: 0.75rem; margin-top: 2px;">(Target: ${displayDensityMin.toFixed(0)}-${displayDensityMax.toFixed(0)})</span></div>`,
                 cn: `<div class="metric-box ${cnS}"><span style="display: block; font-size: 0.85rem; margin-bottom: 2px;">C:N Ratio</span><strong style="display: block; font-size: 1.3rem;">${gCN.toFixed(1)}:1</strong><span style="display: block; font-size: 0.75rem; margin-top: 2px;">(Target: ${dynTargets.cn.min}-${dynTargets.cn.max})</span></div>`
             };
             const sortedMetricsHtml = orderedIds.map(id => healthBlocks[id]).join('');
@@ -1102,7 +1145,7 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-bottom: 15px; text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
                         <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 8px 4px;"><span style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom: 2px;">Moisture</span><strong style="font-size:1rem;">${p.metrics.m.toFixed(1)}%</strong></div>
                         <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 8px 4px;"><span style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom: 2px;">C:N</span><strong style="font-size:1rem;">${p.metrics.cn.toFixed(1)}</strong></div>
-                        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 8px 4px;"><span style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom: 2px;">Density</span><strong style="font-size:1rem;">${p.metrics.d.toFixed(0)}</strong></div>
+                        <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 8px 4px;"><span style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom: 2px;">Density (${densityUnitLabel})</span><strong style="font-size:1rem;">${densityToDisplay(p.metrics.d, isMetric).toFixed(0)}</strong></div>
                     </div>
                     <div>${ingList}</div><div style="text-align: center;">${limitBadge}</div>
                 </div>`;
