@@ -65,7 +65,7 @@ For a feedstock not in the library, fill in the values yourself (lab test result
 
 **📚 Ingredient Library** (button at the top of this tab) opens a much larger reference tool:
 - **Your Items** — your own saved custom ingredients (editable in place, with Save/Load/Delete).
-- **Reference Database** — 134 real, named feedstocks (manures, yard trimmings, wood & paper, food waste, crop residues, straw/hay/silage, meat/fish by-products, liquids) pulled from [`categorized_compost_database.csv`](categorized_compost_database.csv), grouped into collapsible categories with C:N, Density, Moisture, and SI shown for each.
+- **Reference Database** — 134 real, named feedstocks (manures, yard trimmings, wood & paper, food waste, crop residues, straw/hay/silage, meat/fish by-products, liquids) pulled from [`dev/categorized_compost_database.csv`](dev/categorized_compost_database.csv), grouped into collapsible categories with C:N, Density, Moisture, and SI shown for each.
 - A **search bar** filters both sections live by name and auto-expands any category with a match.
 - Each row has an optional **Inventory** field and a **Load** button — set an amount (or leave blank for unlimited) and click Load to drop that ingredient straight into a new row on your Ingredients tab.
 
@@ -84,6 +84,7 @@ This tab shows what the solver came up with:
 
 ### 5. Docs & FAQ
 In-app reference covering:
+- **Full User Guide** — a link out to this README, rendered on GitHub.
 - How to move recipes between devices (export/import via AirDrop or Nearby Share).
 - **Troubleshooting: why can't I see my prior recipes or ingredients?** — covers the browser-scoped storage caveat below.
 - What the Structural Index means and why the average must stay above 5.0.
@@ -113,13 +114,16 @@ Use the in-app **🐛 Report Bugs** tab, or [open an issue directly on GitHub](h
 
 ## Repo Contents
 
+The root is kept to just what the live app needs. Everything else — source data, generator scripts, and dev notes — lives in [`dev/`](dev/).
+
 | File | Purpose |
 |---|---|
-| [`alexs-compost-calculator_v2.html`](alexs-compost-calculator_v2.html) | The app itself — open this in a browser. |
+| [`alexs-compost-calculator_v2.html`](alexs-compost-calculator_v2.html) | The app itself — open this in a browser. This is the only file the live site actually serves. |
 | [`.github/ISSUE_TEMPLATE/bug_report.yml`](.github/ISSUE_TEMPLATE/bug_report.yml) | GitHub's structured issue-form template; also mirrored by the in-app Report Bugs tab. |
-| [`categorized_compost_database.csv`](categorized_compost_database.csv) | Source data for the 134-item Reference Database in the in-app Ingredient Library (name, category, C:N, bulk density, moisture). |
-| [`feedstock_array.js.txt`](feedstock_array.js.txt) | Generated JS array built from the CSV via `gen_feedstock.py` — mirrors exactly what's embedded as `csvLibrary` in the HTML file. If you edit the CSV, rerun the script and paste the output back into the HTML. |
-| [`gen_feedstock.py`](gen_feedstock.py) | Script that converts the CSV into the JS array above (converts density to canonical kg/m³, dedupes by name). |
-| [`compostcalc_full_database.png`](compostcalc_full_database.png) | Reference image of the full feedstock database. |
-| [`READ_ME_compost-optimizer.md`](READ_ME_compost-optimizer.md) | Developer-facing architecture notes. |
 | [`documentation/`](documentation/) | Copy of this README, kept for reference alongside future docs. |
+| [`dev/categorized_compost_database.csv`](dev/categorized_compost_database.csv) | Source data for the 134-item Reference Database in the in-app Ingredient Library (name, category, C:N, bulk density, moisture). |
+| [`dev/feedstock_array.js.txt`](dev/feedstock_array.js.txt) | Generated JS array built from the CSV via `gen_feedstock.py` — mirrors exactly what's embedded as `csvLibrary` in the HTML file. If you edit the CSV, rerun the script (from inside `dev/`) and paste the output back into the HTML. |
+| [`dev/gen_feedstock.py`](dev/gen_feedstock.py) | Script that converts the CSV into the JS array above (converts density to canonical kg/m³, dedupes by name). |
+| [`dev/compostcalc_full_database.png`](dev/compostcalc_full_database.png) | Reference image of the full feedstock database. |
+| [`dev/READ_ME_compost-optimizer.md`](dev/READ_ME_compost-optimizer.md) | Developer-facing architecture notes. |
+| [`dev/index.html`](dev/index.html) | Leftover redirect from when this repo briefly had its own GitHub Pages site (now disabled — the live app is served from `alexstrong.design` instead, see Deployment above). Kept in case a standalone Pages site is useful again later. |
