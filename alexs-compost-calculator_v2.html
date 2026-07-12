@@ -131,7 +131,7 @@
 
 <datalist id="ingredient-library"></datalist>
 
-<div id="libraryModal" class="modal-overlay">
+<div id="libraryModal" class="modal-overlay" onclick="if(event.target===this) closeLibraryModal()">
     <div class="modal-content" style="max-width: 950px;">
         <h2 style="margin-bottom: 5px;">Ingredient Library</h2>
         <p style="background: var(--light-bg); border: 1px solid var(--border); border-radius: 5px; padding: 8px 12px; font-size: 0.85rem; color: var(--muted); margin: 0 0 12px 0;">
@@ -345,7 +345,7 @@
     </details>
 </div>
 
-<div id="noteModal" class="modal-overlay">
+<div id="noteModal" class="modal-overlay" onclick="if(event.target===this) document.getElementById('noteModal').style.display='none'">
     <div class="modal-content" style="max-width: 400px;">
         <h2>Add Field Note</h2>
         <textarea id="noteText" rows="4" style="width: 100%; border: 1px solid var(--border); border-radius: 4px; padding: 10px; background: var(--input-bg); color: var(--input-text); margin-bottom: 10px;"></textarea>
@@ -689,7 +689,8 @@
         let customLib = JSON.parse(localStorage.getItem('compostLibrary')) || [];
         const libMap = new Map();
         internalLibrary.forEach(item => libMap.set(item.name.toLowerCase(), item));
-        customLib.forEach(item => libMap.set(item.name.toLowerCase(), item));
+        csvLibrary.forEach(item => libMap.set(item.name.toLowerCase(), item));
+        customLib.forEach(item => libMap.set(item.name.toLowerCase(), item)); // custom edits win on name collisions
         fullLibrary = Array.from(libMap.values());
         document.getElementById('ingredient-library').innerHTML = fullLibrary.map(item => `<option value="${item.name}">`).join('');
     }
