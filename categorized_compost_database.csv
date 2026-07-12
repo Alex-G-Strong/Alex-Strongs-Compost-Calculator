@@ -1,0 +1,136 @@
+Feedstock,Category,N (%),C (%),C:N Ratio,Bulk Density (lb/cy),Moisture (%)
+Apple filter cake,Crop Residues & Processing Wastes,1.2,19.4,16,1197,60
+Apple pomace,Crop Residues & Processing Wastes,1.1,52.8,48,1531,88
+Apple processing sludge,Crop Residues & Processing Wastes,2.8,19.6,7,1411,59
+Brome Hay UNL,"Straw, Hay & Silage",1.8,42,24,164,7
+Cocoa Shells,Crop Residues & Processing Wastes,2.3,50.8,22,762,8
+Coffee grounds 2,Crop Residues & Processing Wastes,2,36.2,18,1511,80
+Corn cobs,Crop Residues & Processing Wastes,0.6,56.4,94,537,15
+Corn stalks 1,Crop Residues & Processing Wastes,0.7,46.9,67,34,12
+Corn Stalks UNL,Crop Residues & Processing Wastes,1.2,34,29,152,8
+Cranberry filter cake,Crop Residues & Processing Wastes,1.5,46.5,31,1021,55
+Cranberry filter cake (with rice hulls),Crop Residues & Processing Wastes,1.2,50.4,42,1296,71
+Cull Potatoes,Crop Residues & Processing Wastes,2.3,39.4,18,1534,78
+Fruit waste WSU,Crop Residues & Processing Wastes,1.4,44.82,32,1402,80
+Old Silage UNL,"Straw, Hay & Silage",2.2,42,19,502,32
+Rice hulls 1,Crop Residues & Processing Wastes,0.3,36.3,121,202,14
+Rice hulls 2,Crop Residues & Processing Wastes,0.4,36.3,91,202,10
+Spent silage,"Straw, Hay & Silage",1.5,45,30,421,68
+Shredded Broom Corn Stalks with Dry Leaves (SRJC),Yard Trimmings & Vegetation,1.2,36,30,183,58
+Grape Pomace (SRJC),Crop Residues & Processing Wastes,2.7,40,15,1112,56
+Vegetable produce,Crop Residues & Processing Wastes,2.7,51.3,19,1505,87
+Vegetable Waste,Crop Residues & Processing Wastes,3.2,34.75,11,1601,87
+Blood,"Meat, Fish & Animal By-Products",13.5,40.89,3,1517,30
+Crab and lobster wastes,"Meat, Fish & Animal By-Products",6.1,29.89,5,548,47
+Digester Fiber MSU COTC 2022,Crop Residues & Processing Wastes,1.2,48,40,1006,83
+Feather Meal UNL,"Meat, Fish & Animal By-Products",14,52,4,1213,8
+Feather meal and distillers grain mix UNL,"Meat, Fish & Animal By-Products",7.2,49,7,1058,9
+Paunch manure,Manures & Animal Waste,1.8,44.8,25,1460,83
+Poultry Mortalities,Manures & Animal Waste,6,30,5,848,65
+Laying hens manure,Manures & Animal Waste,7,48,7,1409,49
+"Mixed livestock manure, well bedded",Manures & Animal Waste,0.8,24.8,31,439,32
+Pig Farm Slurry,Manures & Animal Waste,3.1,43.4,14,1486,90
+Poultry,Manures & Animal Waste,5.59,55.64,10,1163,53
+Poultry Manure,Manures & Animal Waste,3.4,31.3,9,1452,20
+Poultry manure broiler WSU 2007,Manures & Animal Waste,3.99,47.88,12,836,49
+Poultry manure broiler WSU 2008,Manures & Animal Waste,3.58,46.13,13,625,70
+Poultry manure broiler WSU 2009,Manures & Animal Waste,3.59,47.33,12,778,42
+Poultry manure broiler WSU 2010,Manures & Animal Waste,4.32,50.45,12,687,38
+Poultry manure broiler WSU COTC,Manures & Animal Waste,3.65,46.44,12,731,36
+Poultry Manure with Litter CU COTC,Manures & Animal Waste,3.6,32.4,9,594,16
+Sheep,Manures & Animal Waste,2.7,30.1,14,1753,69
+Cattle manure 4 (SRJC),Manures & Animal Waste,1.4,25,18,1888,68
+Chicken manure (SRJC),Manures & Animal Waste,5.5,35,6,1475,13
+Duck Manure (SRJC),Manures & Animal Waste,1.6,30,19,809,52
+Stable,Manures & Animal Waste,3,39,13,1340,58
+Straw Wheat,"Straw, Hay & Silage",1,85,85,337,28
+Swine,Manures & Animal Waste,3.1,41.67,13,1418,80
+Turkey litter,Manures & Animal Waste,2.6,42,16,785,26
+Vet Hospital Manure and Bedding,Manures & Animal Waste,0.77,45.43,59,354,53
+Beef penpack manure MSU COTC 2022,Manures & Animal Waste,2.3,28,12,864,30
+Broiler litter,Manures & Animal Waste,3.7,52.8,14,864,37
+Cattle 1,Manures & Animal Waste,2.4,45.6,19,1460,81
+Cattle 2,Manures & Animal Waste,2.4,41.27,17,1460,81
+Dairy cow,Manures & Animal Waste,3,37.82,13,1340,80
+Dairy manure and rice hulls,Manures & Animal Waste,0.88,38,43,772,73
+Dairy Manure (no bedding),Manures & Animal Waste,0.62,11.16,18,2191,84
+Dairy manure solids,Manures & Animal Waste,0.8,46.4,58,723,73
+Dairy manure with bedding,Manures & Animal Waste,0.76,14.44,19,1332,67
+Dairy solids WSU 2007,Manures & Animal Waste,1.49,49.22,33,1426,81
+Dairy solids WSU 2008,Manures & Animal Waste,1.8,52.82,29,1285,83
+Dairy solids WSU 2009,Manures & Animal Waste,0.95,54.4,57,1196,81
+Urine,Liquids & Additives,0.94,0.75,1,1722,95
+Water,Liquids & Additives,0,0,0,1682,100
+Straw 1,"Straw, Hay & Silage",0.4,14.18,35,215,12
+Straw 2,"Straw, Hay & Silage",0.7,56,80,215,7
+Straw Oat,"Straw, Hay & Silage",0.9,54,60,337,18
+"Straw, Stable Bedding","Straw, Hay & Silage",0.4,50.8,127,337,18
+Dairy solids WSU 2010,Manures & Animal Waste,1.13,53.14,47,1081,83
+Dairy solids WSU COTC,Manures & Animal Waste,1.28,53.85,42,1228,87
+Dry Manure UNL,Manures & Animal Waste,1.3,17,13,1129,17
+Feedlot Pen UNL,Manures & Animal Waste,0.8,17,21,1112,28
+"Heifer manure, moderate bedding",Manures & Animal Waste,1.6,44.8,28,914,72
+Horse (general manure),Manures & Animal Waste,1.6,48,30,1229,72
+Horse Bedding,Manures & Animal Waste,0.79,28,35,371,32
+Horse bedding UNL,Manures & Animal Waste,1.7,43,25,192,14
+Horse manure CPP COTC,Manures & Animal Waste,1.7,37,22,641,56
+Horse manure SUNY-C COTC,Manures & Animal Waste,1.4,42,30,250,34
+Horse Manure and bedding CU COTC,Manures & Animal Waste,1.1,1.1,1,1079,56
+Horse manure and bedding UCD COTC,Manures & Animal Waste,1.7,57.8,34,320,68
+Bakery Waste,Food & Municipal Waste,2,56,28,421,10
+Fair waste WSU 2007,Food & Municipal Waste,0.88,52.53,60,287,55
+Fair waste WSU 2008,Food & Municipal Waste,0.43,54.59,126,313,50
+Fair waste WSU 2009,Food & Municipal Waste,0.54,57.28,107,243,43
+Fair waste WSU 2010,Food & Municipal Waste,1.54,55.56,36,187,42
+Fair waste WSU COTC,Food & Municipal Waste,0.85,54.38,64,255,48
+Food Scraps CU COTC,Food & Municipal Waste,2.7,54,20,1055,75
+Food Waste WSU,Food & Municipal Waste,2.6,37.1,14,1017,65
+"Food waste, salad NC COTC",Food & Municipal Waste,3.2,37,12,2101,90
+Garbage (food waste),Food & Municipal Waste,2.4,36,15,1005,40
+Kitchen and garden waste,Food & Municipal Waste,2.4,36,15,1180,60
+Sewage sludge 1,Food & Municipal Waste,4.45,60,13,1410,78
+Sewage sludge 2,Food & Municipal Waste,6,60,10,1534,38
+Food waste - dehydrated (SRJC),Food & Municipal Waste,3,48,16,994,19
+Paper pulp,Wood & Paper,0.59,53.1,90,1409,82
+Sawdust 1,Wood & Paper,0.24,106.08,442,405,39
+Sawdust 2,Wood & Paper,0.43,106.08,247,405,42
+Shrub trimmings,Yard Trimmings & Vegetation,1,53,53,438,15
+"Softwood (chips, shavings, and so on)",Wood & Paper,0.09,57.65,641,320,20
+Woodchip mulch (SRJC),Wood & Paper,1,38,38,1197,47
+"Woodchips, Raw (SRJC)",Wood & Paper,0.2,44,46,524,70
+Telephone books,Wood & Paper,0.7,540.4,772,252,6
+Tree trimmings,Yard Trimmings & Vegetation,3.1,49.6,16,1296,70
+Wood Shavings/Sawdust,Wood & Paper,0.1,50,500,405,20
+"Woodchips, Softwood",Wood & Paper,0.2,20.38,102,405,40
+Woodchips CU COTC,Wood & Paper,0.63,63,100,725,45
+Cardboard,Wood & Paper,0.1,37.78,378,270,8
+Corrugated cardboard,Wood & Paper,0.1,56.3,563,259,8
+Grass (compacted),Yard Trimmings & Vegetation,3.4,52.31,15,641,52
+Grass (loose),Yard Trimmings & Vegetation,3.4,52.31,15,300,52
+Green Waste,Yard Trimmings & Vegetation,1,53,53,506,30
+Greenhouse cleanout,Yard Trimmings & Vegetation,0.65,13.68,21,1025,70
+Ground green waste UCD COTC,Yard Trimmings & Vegetation,0.8,37.6,47,573,41
+Ground greenwaste SRJC COTC,Yard Trimmings & Vegetation,0.35,20.08,57,588,29
+Ground wood SUNY-C COTC,Wood & Paper,0.5,30.6,61,1025,30
+"Hardwood (chips, shavings, and so on)",Wood & Paper,0.09,50.4,560,550,50
+Landscape Browns,Yard Trimmings & Vegetation,0.72,46,64,250,20
+Landscape Greens,Yard Trimmings & Vegetation,3.2,42,13,118,24
+Leaves,Yard Trimmings & Vegetation,0.9,58.6,54,405,65
+"Leaves, NC COTC",Yard Trimmings & Vegetation,0.9,51,54,776,52
+"Leaves, Compacted and wet WSU",Yard Trimmings & Vegetation,0.8,42.23,47,906,28
+"Leaves, Compacted and moist Cornell",Yard Trimmings & Vegetation,0.9,48.6,54,490,38
+"Leaves, Fresh",Yard Trimmings & Vegetation,1.3,48.32,37,202,10
+"Leaves, Loose and dry 1",Yard Trimmings & Vegetation,0.9,42.23,47,149,48
+"Leaves, Loose and dry 2",Yard Trimmings & Vegetation,0.9,48.6,54,202,15
+Mulch UNL,Yard Trimmings & Vegetation,0.5,25,50,438,17
+Newsprint 1,Wood & Paper,0.1,62.5,625,270,6
+Newsprint 2,Wood & Paper,0.1,32.28,323,270,6
+Paper & Card Waste,Wood & Paper,0.1,50,500,270,7
+"Paper, Office",Wood & Paper,0.2,25.76,129,300,28
+Woodchips CU COTC,Wood & Paper,0.63,63,100,725,45
+Woodchips SUNY-C COTC,Wood & Paper,0.14,19.6,140,526,50
+Yard trimmings MSU 2007,Yard Trimmings & Vegetation,1.54,31.89,21,673,61
+Yard trimmings MSU 2008,Yard Trimmings & Vegetation,1.47,42.48,29,674,53
+Yard trimmings MSU 2009,Yard Trimmings & Vegetation,1.2,51.82,43,838,58
+Yard trimmings MSU 2010,Yard Trimmings & Vegetation,2.1,47.46,23,800,47
+Yard trimmings MSU COTC,Yard Trimmings & Vegetation,1.54,42.99,28,810,51
