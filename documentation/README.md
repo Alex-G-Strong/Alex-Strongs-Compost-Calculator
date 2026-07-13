@@ -24,7 +24,7 @@ This repo (`Alex-Strongs-Compost-Calculator`) is the source of truth. The live c
 ## Walkthrough
 
 ### 1. Recipe Book
-This is the home tab. It lists every recipe you've saved, showing the date, total volume, and final pile health metrics for each. From here you can:
+This is the home tab. A banner at the top ("👋 First time here?") links straight to the Full User Guide on the Docs & FAQ tab. Below that, it lists every recipe you've saved, showing the date, total volume, and final pile health metrics for each. From here you can:
 - **Load Input** — pull a saved recipe back onto the workbench to tweak and re-solve it.
 - **+ Note** — attach a dated field note (and optionally a photo) to a recipe, e.g. to log how the pile actually turned out.
 - **Export** — download a single recipe as a `.json` file.
@@ -88,7 +88,7 @@ This tab shows what the solver came up with:
 
 ### 5. Docs & FAQ
 In-app reference covering:
-- **Full User Guide** — a link out to this README, rendered on GitHub.
+- **Full User Guide** — this README's user-facing sections (Quick Start, tab walkthrough, solver math, data/privacy, file backup), embedded directly in the app rather than linked out — works fully offline. A banner at the top of the Recipe Book tab points here for first-time visitors.
 - How to move recipes between devices (export/import via AirDrop or Nearby Share).
 - **Troubleshooting: why can't I see my prior recipes or ingredients?** — covers the browser-scoped storage caveat below.
 - What the Structural Index means and why the average must stay above 5.0.
