@@ -94,8 +94,8 @@ In-app reference covering:
 - What the Structural Index means and why the average must stay above 5.0.
 - The math behind the solver (see below).
 
-### 6. 🐛 Report Bugs
-A structured bug report form, mirroring [GitHub's recommended issue-form format](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms) (Title, Version, Steps to Reproduce, Error Logs). Filling it out and clicking **Submit** opens a pre-filled GitHub issue in a new tab — nothing is sent anywhere automatically, and no data leaves your browser until you actually click "Submit new issue" on GitHub's page (which requires a free GitHub account). This tab notes that the project may not be actively maintained.
+### 6. 💬 Report Feedback and Bugs
+A general feedback form — not just for bugs. Fields: **Title** (required), **Notes and Feedback** (required — general thoughts, confusing workflows, feature ideas, or what went wrong), and **For bugs, steps to reproduce** (optional). Submitting captures the current timestamp and browser info automatically, so there's nothing to look up manually. It submits directly to a Google Form in the background — the user never leaves the page. Technical users who'd rather file a structured issue directly can use the GitHub link at the top of the tab instead, which still uses [GitHub's recommended issue-form format](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms). This tab notes that the project may not be actively maintained.
 
 ## How the Solver Works
 
@@ -120,9 +120,11 @@ This relies on the [File System Access API](https://developer.chrome.com/docs/ca
 
 Note this isn't a "save on close" mechanism — browsers don't reliably let a page finish an async file write while it's being closed, so instead the app writes the backup file continuously, immediately after every change, so it's always current.
 
-## Reporting Bugs
+## Reporting Feedback and Bugs
 
-Use the in-app **🐛 Report Bugs** tab, or [open an issue directly on GitHub](https://github.com/Alex-G-Strong/Alex-Strongs-Compost-Calculator/issues/new/choose) — both use the same structured template at [`.github/ISSUE_TEMPLATE/bug_report.yml`](.github/ISSUE_TEMPLATE/bug_report.yml).
+Use the in-app **💬 Report Feedback and Bugs** tab for general feedback or a bug report (submits to a Google Form, no GitHub account needed), or use the GitHub link on that same tab to [open a structured issue directly](https://github.com/Alex-G-Strong/Alex-Strongs-Compost-Calculator/issues/new/choose) using the template at [`.github/ISSUE_TEMPLATE/bug_report.yml`](.github/ISSUE_TEMPLATE/bug_report.yml).
+
+**Maintainer setup note:** the in-app form needs a Google Form connected before it will actually deliver anything — see the `FEEDBACK_FORM_CONFIG` comment in `alexs-compost-calculator_v2.html` for the exact fields needed and where to paste the resulting entry IDs.
 
 ## Repo Contents
 
