@@ -124,7 +124,7 @@ Note this isn't a "save on close" mechanism — browsers don't reliably let a pa
 
 Use the in-app **💬 Report Feedback and Bugs** tab for general feedback or a bug report (submits to a Google Form, no GitHub account needed), or use the GitHub link on that same tab to [open a structured issue directly](https://github.com/Alex-G-Strong/Alex-Strongs-Compost-Calculator/issues/new/choose) using the template at [`.github/ISSUE_TEMPLATE/bug_report.yml`](.github/ISSUE_TEMPLATE/bug_report.yml).
 
-**Maintainer setup note:** the in-app form needs a Google Form connected before it will actually deliver anything — see the `FEEDBACK_FORM_CONFIG` comment in `alexs-compost-calculator_v2.html` for the exact fields needed and where to paste the resulting entry IDs.
+Submissions go to a private Google Form/Sheet (`FEEDBACK_FORM_CONFIG` in `alexs-compost-calculator_v2.html`) — not publicly visible.
 
 ## Repo Contents
 
